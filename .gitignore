@@ -22,6 +22,7 @@ yarn-error.log
 /.vscode
 /.zed
 /masalah
+/foto
 desktop.ini
 *.sqlite
 *.sqlite-journal

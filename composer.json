@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "ihsanuddin23/tokoku",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "TokoKu — E-commerce platform multi-role built with Laravel 12, Tailwind CSS, and Alpine.js.",
+    "keywords": ["laravel", "ecommerce", "marketplace", "tailwindcss", "alpinejs"],
     "license": "MIT",
     "require": {
         "php": "^8.2",

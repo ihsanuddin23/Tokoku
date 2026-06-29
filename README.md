@@ -1,6 +1,19 @@
 # TokoKu — E-Commerce Platform
 
-Platform e-commerce multi-role (Buyer, Seller, Admin) dibangun dengan Laravel 12, Tailwind CSS, dan Alpine.js. Saat ini sudah berada di tahap **MVP lengkap** yang mencakup sisi pembeli, penjual, dan admin dengan homepage yang user-friendly dan modern.
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)](https://php.net)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.1-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Tests](https://img.shields.io/badge/Tests-75%20passing-brightgreen?logo=php&logoColor=white)]()
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern, fitur transaksi lengkap, dan keamanan yang kuat. Dibangun sebagai proyek portofolio menggunakan Laravel 12, Tailwind CSS, dan Alpine.js.
+
+**Status:** MVP Lengkap — Fase 1, 2, 3 selesai. Siap untuk demo atau soft launch.
+
+## Demo
+
+- **Live Demo:** [https://tokoku-demo.example.com](https://tokoku-demo.example.com) *(ganti dengan URL Anda)*
+- **Screenshots:** [docs/screenshots/](docs/screenshots/)
 
 ## Tech Stack
 
@@ -91,6 +104,33 @@ php artisan test
 ```
 
 Saat ini tersedia **75 test** dengan **165 assertions** yang mencakup autentikasi, katalog, keranjang, pesanan, produk seller, banner admin, dan profil.
+
+## Screenshots
+
+> Tambahkan screenshot ke folder `docs/screenshots/` dan update path di bawah.
+
+| Homepage | Katalog Produk | Detail Produk |
+|----------|----------------|---------------|
+| ![Homepage](docs/screenshots/homepage.png) | ![Katalog](docs/screenshots/catalog.png) | ![Detail](docs/screenshots/product-detail.png) |
+
+| Seller Dashboard | Kelola Produk | Checkout |
+|------------------|-----------------|----------|
+| ![Seller](docs/screenshots/seller-dashboard.png) | ![Products](docs/screenshots/seller-products.png) | ![Checkout](docs/screenshots/checkout.png) |
+
+## Arsitektur
+
+```
+User (Buyer/Seller/Admin)
+    │
+    ▼
+Laravel Routes → Middleware (Auth, Role, Active)
+    │
+    ▼
+Controllers → Models → SQLite/MySQL
+    │
+    ▼
+Blade Views + Tailwind CSS + Alpine.js
+```
 
 ## Roadmap
 

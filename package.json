@@ -1,6 +1,9 @@
 {
     "private": true,
     "type": "module",
+    "name": "tokoku",
+    "description": "TokoKu — E-commerce platform multi-role built with Laravel 12, Tailwind CSS, and Alpine.js",
+    "keywords": ["laravel", "ecommerce", "marketplace", "tailwindcss", "alpinejs"],
     "scripts": {
         "build": "vite build",
         "dev": "vite"

@@ -13,7 +13,7 @@ Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern
 ## Demo
 
 - **Live Demo:** [https://tokoku-demo.example.com](https://tokoku-demo.example.com) *(ganti dengan URL Anda)*
-- **Screenshots:** [docs/screenshots/](docs/screenshots/)
+- **Screenshots:** Lihat di bawah atau langsung ke folder [docs/screenshots/](docs/screenshots/)
 
 ## Tech Stack
 
@@ -71,8 +71,8 @@ Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern
 
 ```bash
 # Clone repository
-git clone https://github.com/USERNAME/tokoku.git
-cd tokoku
+git clone https://github.com/ihsanuddin23/Tokoku.git
+cd Tokoku
 
 # Install dependencies
 composer install
@@ -82,8 +82,11 @@ npm install && npm run build
 cp .env.example .env
 php artisan key:generate
 
-# Database (SQLite untuk development)
+# Database (MySQL via XAMPP — buat database 'tokoku' di phpMyAdmin terlebih dahulu)
 php artisan migrate --seed
+
+# Generate product images (opsional, butuh koneksi internet)
+php artisan products:generate-images
 
 # Jalankan server
 php artisan serve
@@ -107,15 +110,58 @@ Saat ini tersedia **75 test** dengan **165 assertions** yang mencakup autentikas
 
 ## Screenshots
 
-> Tambahkan screenshot ke folder `docs/screenshots/` dan update path di bawah.
+### Homepage
 
-| Homepage | Katalog Produk | Detail Produk |
-|----------|----------------|---------------|
-| ![Homepage](docs/screenshots/homepage.png) | ![Katalog](docs/screenshots/catalog.png) | ![Detail](docs/screenshots/product-detail.png) |
+| ![Homepage 1](docs/screenshots/homepage1.png) | ![Homepage 2](docs/screenshots/homepage2.png) |
+|---|---|
+| ![Homepage 3](docs/screenshots/homepage3.png) | ![Homepage 4](docs/screenshots/homepage4.png) |
+| ![Homepage 5](docs/screenshots/homepage5.png) | ![Homepage 6](docs/screenshots/homepage6.png) |
 
-| Seller Dashboard | Kelola Produk | Checkout |
-|------------------|-----------------|----------|
-| ![Seller](docs/screenshots/seller-dashboard.png) | ![Products](docs/screenshots/seller-products.png) | ![Checkout](docs/screenshots/checkout.png) |
+### Autentikasi
+
+| Login | Register |
+|-------|----------|
+| ![Login](docs/screenshots/login.png) | ![Register](docs/screenshots/register.png) |
+
+### Katalog & Produk
+
+| Katalog 1 | Katalog 2 |
+|-----------|----------|
+| ![Katalog 1](docs/screenshots/products1.png) | ![Katalog 2](docs/screenshots/products2.png) |
+
+| Detail Produk 1 | Detail Produk 2 |
+|-----------------|-----------------|
+| ![Detail 1](docs/screenshots/detailproducts1.png) | ![Detail 2](docs/screenshots/detailproducts2.png) |
+
+### Transaksi (Buyer)
+
+| Cart | Checkout | Riwayat Pesanan |
+|------|----------|-----------------|
+| ![Cart](docs/screenshots/cart.png) | ![Checkout](docs/screenshots/checkout.png) | ![Riwayat](docs/screenshots/riwayatpesanan.png) |
+
+| Alamat Pengiriman | Profil Buyer |
+|-------------------|---------------|
+| ![Alamat](docs/screenshots/profilebuyeraddresses.png) | ![Profil](docs/screenshots/profileadmin.png) |
+
+### Seller Panel
+
+| Dashboard Seller | Kelola Produk | Tambah Produk |
+|------------------|----------------|----------------|
+| ![Dashboard](docs/screenshots/dashboardseller.png) | ![Kelola](docs/screenshots/kelolaprodukseller.png) | ![Tambah](docs/screenshots/tambahprodukseller.png) |
+
+| Pesanan Masuk | Profil Toko |
+|---------------|-------------|
+| ![Pesanan](docs/screenshots/pesananmasukseller.png) | ![Toko](docs/screenshots/namatoko.png) |
+
+### Admin Panel
+
+| Dashboard Admin | Kategori | Manajemen User |
+|-----------------|----------|----------------|
+| ![Admin](docs/screenshots/dashboaradmin.png) | ![Kategori](docs/screenshots/kategoriprodukadmin.png) | ![User](docs/screenshots/manajemenuseradmin.png) |
+
+| Verifikasi Seller | Manajemen Banner |
+|-------------------|-------------------|
+| ![Verifikasi](docs/screenshots/verifikasiselleradmin.png) | ![Banner](docs/screenshots/manajemenbanneradmin.png) |
 
 ## Arsitektur
 

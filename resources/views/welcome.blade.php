@@ -120,7 +120,7 @@
 
         <!-- Wave divider -->
         <div class="relative">
-            <svg class="w-full" viewBox="0 0 1440 60" fill="none" preserveAspectRatio="none"><path d="M0 60L60 50C120 40 240 20 360 15C480 10 600 20 720 25C840 30 960 30 1080 25C1200 20 1320 10 1380 5L1440 0V60H0Z" fill="#f5f9ff"/></svg>
+            <svg class="w-full" viewBox="0 0 1440 60" fill="none" preserveAspectRatio="none"><path d="M0 60L60 50C120 40 240 20 360 15C480 10 600 20 720 25C840 30 960 30 1080 25C1200 20 1320 10 1380 5L1440 0V60H0Z" fill="#f8fafc"/></svg>
         </div>
     </section>
 
@@ -157,8 +157,132 @@
         </div>
     </section>
 
+    <!-- Promo Strip -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-500 via-primary-600 to-secondary-500 p-5 sm:p-6 shadow-lg shadow-primary-500/20 animate-fade-in-up">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4"></div>
+            <div class="absolute bottom-0 left-10 w-24 h-24 bg-white/10 rounded-full blur-xl translate-y-1/2"></div>
+            <div class="relative flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div>
+                        <p class="text-white font-bold text-lg font-display">Diskon 20% untuk pengguna baru</p>
+                        <p class="text-white/80 text-sm">Gunakan kode <span class="font-bold text-white bg-white/20 px-2 py-0.5 rounded">NEWBIE20</span> di checkout</p>
+                    </div>
+                </div>
+                <a href="{{ route('products.index') }}" class="shrink-0 inline-flex items-center justify-center gap-2 bg-white text-primary-600 font-bold px-6 py-2.5 rounded-xl hover:bg-primary-50 transition-all duration-200 active:scale-95 shadow-md">
+                    Belanja Sekarang
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Flash Sale -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="card border border-red-100 overflow-hidden animate-fade-in-up">
+            <div class="bg-gradient-to-r from-red-500 via-red-500 to-rose-500 px-5 py-4 sm:px-6 sm:py-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-lg font-display">Flash Sale</p>
+                            <p class="text-white/80 text-sm">Berakhir dalam</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2" x-data="flashSale()" x-init="start()">
+                        <div class="w-12 h-12 bg-white rounded-xl flex flex-col items-center justify-center shadow-md">
+                            <span x-text="hours" class="text-red-500 font-bold text-lg leading-none">00</span>
+                            <span class="text-[10px] text-dark-500">Jam</span>
+                        </div>
+                        <span class="text-white font-bold text-xl">:</span>
+                        <div class="w-12 h-12 bg-white rounded-xl flex flex-col items-center justify-center shadow-md">
+                            <span x-text="minutes" class="text-red-500 font-bold text-lg leading-none">00</span>
+                            <span class="text-[10px] text-dark-500">Menit</span>
+                        </div>
+                        <span class="text-white font-bold text-xl">:</span>
+                        <div class="w-12 h-12 bg-white rounded-xl flex flex-col items-center justify-center shadow-md">
+                            <span x-text="seconds" class="text-red-500 font-bold text-lg leading-none">00</span>
+                            <span class="text-[10px] text-dark-500">Detik</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5 sm:p-6">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    @forelse ($products->take(5) as $product)
+                        @php
+                            $discount = rand(15, 35);
+                            $salePrice = $product->price * (1 - $discount / 100);
+                        @endphp
+                        <a href="{{ route('products.show', $product) }}" class="group cursor-pointer">
+                            <div class="aspect-square bg-gradient-to-br from-red-50 to-rose-100 rounded-2xl flex items-center justify-center relative mb-3 overflow-hidden group-hover:from-red-100 group-hover:to-rose-200 transition-all duration-300">
+                                @if ($product->first_image)
+                                    <img src="{{ Storage::url($product->first_image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                                @else
+                                    <svg class="w-10 h-10 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                @endif
+                                <span class="absolute top-2 left-2 badge bg-red-500 text-white text-[10px]">-{{ $discount }}%</span>
+                            </div>
+                            <p class="text-sm text-dark-800 font-medium line-clamp-2 group-hover:text-red-500 transition-colors">{{ $product->name }}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p class="text-red-500 font-bold text-base font-display">Rp {{ number_format($salePrice, 0, ',', '.') }}</p>
+                            </div>
+                            <p class="text-xs text-dark-400 line-through">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                            <div class="mt-2 w-full bg-dark-100 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-red-400 to-red-500 h-1.5 rounded-full" style="width: {{ rand(40, 90) }}%"></div>
+                            </div>
+                            <p class="text-[10px] text-dark-500 mt-1">{{ rand(5, 50) }} terjual</p>
+                        </a>
+                    @empty
+                        <div class="col-span-full text-center py-8 text-dark-400">
+                            <p>Belum ada flash sale tersedia.</p>
+                        </div>
+                    @endforelse
+                </div>
+                <div class="mt-5 text-center">
+                    <a href="{{ route('products.index') }}" class="inline-flex items-center justify-center gap-2 text-red-500 hover:text-red-600 font-semibold text-sm transition-colors">
+                        Lihat Semua Flash Sale
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function flashSale() {
+            return {
+                hours: '00',
+                minutes: '00',
+                seconds: '00',
+                start() {
+                    const end = new Date();
+                    end.setHours(23, 59, 59, 999);
+                    const update = () => {
+                        const now = new Date();
+                        let diff = end - now;
+                        if (diff < 0) diff = 0;
+                        const h = Math.floor(diff / 1000 / 60 / 60);
+                        const m = Math.floor((diff / 1000 / 60) % 60);
+                        const s = Math.floor((diff / 1000) % 60);
+                        this.hours = String(h).padStart(2, '0');
+                        this.minutes = String(m).padStart(2, '0');
+                        this.seconds = String(s).padStart(2, '0');
+                    };
+                    update();
+                    setInterval(update, 1000);
+                }
+            }
+        }
+    </script>
+
     <!-- Categories -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 bg-gradient-to-b from-primary-50/70 via-primary-50/30 to-transparent rounded-3xl">
         <div class="flex items-end justify-between mb-8">
             <div>
                 <span class="text-xs font-semibold uppercase tracking-wider text-primary-600">Kategori</span>
@@ -228,7 +352,7 @@
     </section>
 
     <!-- New Products -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 bg-gradient-to-b from-blue-50/60 via-blue-50/20 to-transparent rounded-3xl">
         <div class="flex items-end justify-between mb-8">
             <div>
                 <span class="text-xs font-semibold uppercase tracking-wider text-primary-600">Baru Arrived</span>
@@ -334,7 +458,7 @@
     </section>
 
     <!-- Why TokoKu -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-gradient-to-b from-secondary-50/50 via-transparent to-primary-50/40 rounded-3xl">
         <div class="text-center mb-12">
             <h2 class="text-2xl sm:text-3xl font-bold font-display text-dark-900 mb-3">Mengapa TokoKu?</h2>
             <p class="text-dark-500 max-w-xl mx-auto">Kami memberikan pengalaman belanja dan berjualan terbaik untuk Anda.</p>
@@ -517,12 +641,74 @@
                         <span class="text-sm font-semibold text-dark-900">{{ $faq[0] }}</span>
                         <svg class="w-5 h-5 text-primary-500 shrink-0 transition-transform duration-300" :class="open === {{ $i }} ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                     </button>
-                    <div x-show="open === {{ $i }}" x-collapse x-cloak style="display: none;">
+                    <div x-show="open === {{ $i }}" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak style="display: none;">
                         <p class="px-5 pb-5 text-sm text-dark-500 leading-relaxed">{{ $faq[1] }}</p>
                     </div>
                 </div>
             @endforeach
         </div>
     </section>
+
+    <!-- Newsletter -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 p-8 sm:p-12 text-white shadow-lg shadow-primary-500/20">
+            <div class="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+            <div class="absolute bottom-0 left-10 w-48 h-48 bg-white/10 rounded-full blur-2xl translate-y-1/2"></div>
+            <div class="relative flex flex-col lg:flex-row items-center justify-between gap-8">
+                <div class="max-w-xl text-center lg:text-left">
+                    <h2 class="text-2xl sm:text-3xl font-bold font-display mb-3">Dapatkan Promo & Update Terbaru</h2>
+                    <p class="text-white/80 text-base leading-relaxed">Langganan newsletter kami dan dapatkan info diskon, produk baru, dan tips berjualan langsung ke email Anda.</p>
+                </div>
+                <form class="w-full max-w-md flex flex-col sm:flex-row gap-3" onsubmit="event.preventDefault(); alert('Terima kasih sudah berlangganan newsletter TokoKu!');">
+                    <input type="email" required placeholder="Masukkan email Anda" class="flex-1 bg-white/20 border border-white/30 text-white placeholder-white/70 rounded-xl px-5 py-3.5 outline-none focus:bg-white/30 focus:border-white transition-all">
+                    <button type="submit" class="shrink-0 bg-white text-primary-600 font-bold px-6 py-3.5 rounded-xl hover:bg-primary-50 transition-all active:scale-95 shadow-md">
+                        Berlangganan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment & Shipping Partners -->
+    <section class="bg-white border-y border-dark-100 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8">
+                <p class="text-sm font-semibold text-dark-500 uppercase tracking-wider">Didukung oleh Metode Pembayaran & Kurir Terpercaya</p>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 items-center justify-items-center opacity-80 hover:opacity-100 transition-opacity duration-300">
+                <!-- Payment methods -->
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>Transfer Bank</span>
+                </div>
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>GoPay</span>
+                </div>
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>OVO</span>
+                </div>
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>DANA</span>
+                </div>
+                <!-- Shipping partners -->
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>JNE</span>
+                </div>
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>J&T</span>
+                </div>
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>SiCepat</span>
+                </div>
+                <div class="flex items-center justify-center px-4 py-2 bg-dark-50 rounded-xl border border-dark-100 w-full h-12 text-sm font-semibold text-dark-700">
+                    <span>GoSend</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Back to Top -->
+    <button x-data="{ visible: false }" @scroll.window="visible = window.scrollY > 400" x-show="visible" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-4" @click="window.scrollTo({ top: 0, behavior: 'smooth' })" class="fixed bottom-20 sm:bottom-6 right-6 z-50 w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-full shadow-lg shadow-primary-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95" aria-label="Back to top" style="display: none;">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+    </button>
 
 </x-app-layout>

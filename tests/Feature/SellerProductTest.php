@@ -176,4 +176,83 @@ class SellerProductTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_seller_can_update_stock_in_bulk(): void
+    {
+        [$seller, $sellerProfile, $category] = $this->createVerifiedSeller();
+
+        $product1 = Product::factory()->create([
+            'seller_profile_id' => $sellerProfile->id,
+            'category_id' => $category->id,
+            'stock' => 5,
+        ]);
+        $product2 = Product::factory()->create([
+            'seller_profile_id' => $sellerProfile->id,
+            'category_id' => $category->id,
+            'stock' => 10,
+        ]);
+
+        $response = $this->actingAs($seller)->post('/seller/products/bulk-stock', [
+            'stocks' => [
+                $product1->id => 20,
+                $product2->id => 30,
+            ],
+        ]);
+
+        $response->assertRedirect(route('seller.products.index'));
+        $response->assertSessionHas('status', 'bulk-stock-updated');
+        $this->assertEquals(20, $product1->fresh()->stock);
+        $this->assertEquals(30, $product2->fresh()->stock);
+    }
+
+    public function test_seller_cannot_update_stock_of_other_seller_in_bulk(): void
+    {
+        [$seller, $sellerProfile, $category] = $this->createVerifiedSeller();
+        $otherSeller = User::factory()->seller()->create();
+        $otherProfile = SellerProfile::factory()->create([
+            'user_id' => $otherSeller->id,
+            'is_verified' => true,
+            'is_active' => true,
+        ]);
+
+        $ownProduct = Product::factory()->create([
+            'seller_profile_id' => $sellerProfile->id,
+            'category_id' => $category->id,
+            'stock' => 5,
+        ]);
+        $otherProduct = Product::factory()->create([
+            'seller_profile_id' => $otherProfile->id,
+            'category_id' => $category->id,
+            'stock' => 10,
+        ]);
+
+        $response = $this->actingAs($seller)->post('/seller/products/bulk-stock', [
+            'stocks' => [
+                $ownProduct->id => 20,
+                $otherProduct->id => 99,
+            ],
+        ]);
+
+        $response->assertRedirect(route('seller.products.index'));
+        $this->assertEquals(20, $ownProduct->fresh()->stock);
+        $this->assertEquals(10, $otherProduct->fresh()->stock);
+    }
+
+    public function test_seller_can_filter_and_sort_products(): void
+    {
+        [$seller, $sellerProfile, $category] = $this->createVerifiedSeller();
+
+        $product = Product::factory()->create([
+            'seller_profile_id' => $sellerProfile->id,
+            'category_id' => $category->id,
+            'name' => 'Unique Filterable Product',
+            'status' => 'active',
+            'stock' => 25,
+        ]);
+
+        $response = $this->actingAs($seller)->get('/seller/products?search=Unique&status=active&sort=stock_desc');
+
+        $response->assertStatus(200);
+        $response->assertSee('Unique Filterable Product');
+    }
 }

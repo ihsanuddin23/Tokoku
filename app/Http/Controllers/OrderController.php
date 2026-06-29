@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -91,9 +92,13 @@ class OrderController extends Controller
 
             $grandTotal = $subtotal + $shippingCost;
 
-            $order = Order::create([
-                'user_id' => $user->id,
+            $order = $user->orders()->create([
                 'address_id' => $address->id,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            $order->forceFill([
+                'order_number' => 'ORD-' . strtoupper(Str::random(8)),
                 'status' => 'pending',
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingCost,
@@ -101,13 +106,12 @@ class OrderController extends Controller
                 'payment_method' => 'manual',
                 'payment_status' => 'unpaid',
                 'shipping_address' => $shippingAddress,
-                'notes' => $validated['notes'] ?? null,
-            ]);
+            ])->save();
 
             foreach ($cartItems as $item) {
                 $product = $products[$item->product_id];
 
-                OrderItem::create([
+                (new OrderItem)->forceFill([
                     'order_id' => $order->id,
                     'product_id' => $item->product_id,
                     'seller_profile_id' => $product->seller_profile_id,
@@ -116,7 +120,7 @@ class OrderController extends Controller
                     'quantity' => $item->quantity,
                     'subtotal' => $product->price * $item->quantity,
                     'status' => 'pending',
-                ]);
+                ])->save();
 
                 $product->decrement('stock', $item->quantity);
                 $product->increment('total_sold', $item->quantity);
@@ -161,11 +165,11 @@ class OrderController extends Controller
 
             $paymentStatus = $order->payment_status === 'paid' ? 'refunded' : 'unpaid';
 
-            $order->update([
+            $order->forceFill([
                 'status' => 'cancelled',
                 'payment_status' => $paymentStatus,
                 'cancelled_at' => now(),
-            ]);
+            ])->save();
         });
 
         return redirect()->route('orders.show', $order)->with('status', 'order-cancelled');

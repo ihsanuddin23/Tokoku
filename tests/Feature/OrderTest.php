@@ -186,7 +186,7 @@ class OrderTest extends TestCase
         ]);
 
         $order = Order::where('user_id', $buyer->id)->first();
-        $order->update(['status' => 'completed']);
+        $order->forceFill(['status' => 'completed'])->save();
 
         $response = $this->actingAs($buyer)->patch("/orders/{$order->id}/cancel");
 

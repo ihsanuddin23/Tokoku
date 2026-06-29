@@ -43,8 +43,8 @@ Route::get('/', function () {
     return view('welcome', compact('banners', 'categories', 'products', 'newProducts', 'popularStores'));
 })->name('home');
 
-Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/products', [ProductController::class, 'index'])->name('products.index')->middleware('throttle:60,1');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show')->middleware('throttle:60,1');
 Route::get('/stores/{slug}', [StoreController::class, 'show'])->name('stores.show');
 
 // Guest routes (auth)

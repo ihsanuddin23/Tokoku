@@ -11,15 +11,12 @@ class SellerProfile extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'user_id',
         'store_name',
         'store_slug',
         'description',
         'logo',
         'banner',
         'city',
-        'is_verified',
-        'is_active',
     ];
 
     protected $casts = [

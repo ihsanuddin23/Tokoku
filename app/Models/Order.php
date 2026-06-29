@@ -10,21 +10,8 @@ use Illuminate\Support\Str;
 class Order extends Model
 {
     protected $fillable = [
-        'order_number',
-        'user_id',
         'address_id',
-        'status',
-        'subtotal',
-        'shipping_cost',
-        'grand_total',
-        'payment_method',
-        'payment_status',
-        'shipping_address',
         'notes',
-        'paid_at',
-        'shipped_at',
-        'completed_at',
-        'cancelled_at',
     ];
 
     protected $casts = [

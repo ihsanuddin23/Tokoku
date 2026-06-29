@@ -8,13 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SellerVerification extends Model
 {
     protected $fillable = [
-        'user_id',
         'store_name',
         'city',
         'description',
-        'status',
-        'admin_note',
-        'reviewed_at',
     ];
 
     protected $casts = [

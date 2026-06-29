@@ -55,9 +55,9 @@ class SellerOrderController extends Controller
         }
 
         DB::transaction(function () use ($orderItem, $validated, $oldStatus) {
-            $orderItem->update([
+            $orderItem->forceFill([
                 'status' => $validated['status'],
-            ]);
+            ])->save();
 
             if ($validated['status'] === 'cancelled' && $oldStatus !== 'cancelled') {
                 if ($orderItem->product) {

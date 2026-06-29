@@ -120,7 +120,7 @@
 
         <!-- Wave divider -->
         <div class="relative">
-            <svg class="w-full" viewBox="0 0 1440 60" fill="none" preserveAspectRatio="none"><path d="M0 60L60 50C120 40 240 20 360 15C480 10 600 20 720 25C840 30 960 30 1080 25C1200 20 1320 10 1380 5L1440 0V60H0Z" fill="#f8fafc"/></svg>
+            <svg class="w-full" viewBox="0 0 1440 60" fill="none" preserveAspectRatio="none"><path d="M0 60L60 50C120 40 240 20 360 15C480 10 600 20 720 25C840 30 960 30 1080 25C1200 20 1320 10 1380 5L1440 0V60H0Z" fill="#f5f9ff"/></svg>
         </div>
     </section>
 

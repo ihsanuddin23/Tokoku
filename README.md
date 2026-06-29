@@ -1,9 +1,9 @@
 # TokoKu — E-Commerce Platform
 
+[![Tests](https://github.com/ihsanuddin23/Tokoku/actions/workflows/tests.yml/badge.svg)](https://github.com/ihsanuddin23/Tokoku/actions/workflows/tests.yml)
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)](https://php.net)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.1-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Tests](https://img.shields.io/badge/Tests-75%20passing-brightgreen?logo=php&logoColor=white)]()
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern, fitur transaksi lengkap, dan keamanan yang kuat. Dibangun sebagai proyek portofolio menggunakan Laravel 12, Tailwind CSS, dan Alpine.js.

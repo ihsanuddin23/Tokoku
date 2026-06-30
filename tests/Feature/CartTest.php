@@ -94,8 +94,7 @@ class CartTest extends TestCase
     {
         [$buyer, $product] = $this->createBuyerWithProduct();
 
-        $cart = Cart::create([
-            'user_id' => $buyer->id,
+        $cart = $buyer->cartItems()->create([
             'product_id' => $product->id,
             'quantity' => 1,
         ]);
@@ -112,8 +111,7 @@ class CartTest extends TestCase
     {
         [$buyer, $product] = $this->createBuyerWithProduct();
 
-        $cart = Cart::create([
-            'user_id' => $buyer->id,
+        $cart = $buyer->cartItems()->create([
             'product_id' => $product->id,
             'quantity' => 1,
         ]);
@@ -129,8 +127,7 @@ class CartTest extends TestCase
         [$buyer, $product] = $this->createBuyerWithProduct();
         $otherBuyer = User::factory()->buyer()->create();
 
-        $cart = Cart::create([
-            'user_id' => $buyer->id,
+        $cart = $buyer->cartItems()->create([
             'product_id' => $product->id,
             'quantity' => 1,
         ]);

@@ -51,8 +51,7 @@ class CartController extends Controller
             }
             $cart->update(['quantity' => $newQty]);
         } else {
-            Cart::create([
-                'user_id' => $request->user()->id,
+            $request->user()->cartItems()->create([
                 'product_id' => $validated['product_id'],
                 'quantity' => $validated['quantity'],
             ]);

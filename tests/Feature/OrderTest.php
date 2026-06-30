@@ -43,8 +43,7 @@ class OrderTest extends TestCase
             'is_default' => true,
         ]);
 
-        Cart::create([
-            'user_id' => $buyer->id,
+        $buyer->cartItems()->create([
             'product_id' => $product->id,
             'quantity' => 2,
         ]);

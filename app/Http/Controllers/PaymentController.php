@@ -88,12 +88,36 @@ class PaymentController extends Controller
             $notification = new Notification();
 
             $orderId = $notification->order_id;
+            $statusCode = $notification->status_code;
             $transactionStatus = $notification->transaction_status;
             $fraudStatus = $notification->fraud_status;
             $transactionId = $notification->transaction_id;
             $paymentType = $notification->payment_type;
 
             $payment = Payment::where('midtrans_order_id', $orderId)->firstOrFail();
+
+            $signatureKey = hash('sha512',
+                $orderId .
+                $statusCode .
+                $transactionStatus .
+                $fraudStatus .
+                config('midtrans.server_key')
+            );
+
+            if ($signatureKey !== $request->signature_key) {
+                Log::warning('Midtrans webhook signature mismatch', [
+                    'order_id' => $orderId,
+                    'expected' => $signatureKey,
+                    'received' => $request->signature_key,
+                ]);
+
+                return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 403);
+            }
+
+            if ($payment->transaction_status !== 'pending') {
+                return response()->json(['status' => 'ok', 'message' => 'Already processed']);
+            }
+
             $order = $payment->order;
 
             DB::transaction(function () use ($payment, $order, $notification, $transactionStatus, $fraudStatus, $transactionId, $paymentType) {

@@ -78,7 +78,9 @@ class Product extends Model
 
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-              ->orWhere('description', 'like', "%{$term}%");
+              ->orWhere('description', 'like', "%{$term}%")
+              ->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$term}%"))
+              ->orWhereHas('sellerProfile', fn ($s) => $s->where('store_name', 'like', "%{$term}%"));
         });
     }
 

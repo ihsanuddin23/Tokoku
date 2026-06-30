@@ -145,6 +145,28 @@ class OrderController extends Controller
         return view('orders.show', compact('order'));
     }
 
+    public function complete(Request $request, Order $order): RedirectResponse
+    {
+        if ($order->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if ($order->status !== 'shipped') {
+            return back()->with('info', 'Pesanan hanya dapat diselesaikan setelah status "Dikirim".');
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->items()->where('status', 'shipped')->update(['status' => 'completed']);
+
+            $order->forceFill([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ])->save();
+        });
+
+        return redirect()->route('orders.show', $order)->with('status', 'order-completed');
+    }
+
     public function cancel(Request $request, Order $order): RedirectResponse
     {
         if ($order->user_id !== $request->user()->id) {

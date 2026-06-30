@@ -104,6 +104,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::patch('/orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
 
     // Payment
     Route::get('/payment/{order}', [PaymentController::class, 'show'])->name('payment.show');

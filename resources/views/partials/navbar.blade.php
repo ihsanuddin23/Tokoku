@@ -13,13 +13,17 @@
 
             <!-- Search Bar (desktop) -->
             <div class="flex-1 max-w-xl hidden sm:block">
-                <div class="relative group">
-                    <input type="text" placeholder="Cari produk, toko, kategori..."
-                        class="w-full bg-dark-50 border border-dark-200/60 rounded-xl pl-11 pr-5 py-2.5 text-sm outline-none transition-all duration-200 focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-100 placeholder-dark-400">
-                    <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400 group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
+                <form action="{{ route('products.index') }}" method="GET">
+                    <div class="relative group">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari produk, toko, kategori..."
+                            class="w-full bg-dark-50 border border-dark-200/60 rounded-xl pl-11 pr-5 py-2.5 text-sm outline-none transition-all duration-200 focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-100 placeholder-dark-400">
+                        <button type="submit" class="absolute left-3.5 top-1/2 -translate-y-1/2">
+                            <svg class="w-5 h-5 text-dark-400 group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Actions -->
@@ -209,13 +213,17 @@
     <div x-show="open" x-transition.origin.top class="sm:hidden border-t border-dark-100 bg-white/95 backdrop-blur-md" style="display: none;">
         <div class="px-4 py-4 space-y-3">
             <!-- Mobile Search -->
-            <div class="relative">
-                <input type="text" placeholder="Cari produk..."
-                    class="w-full bg-dark-50 border border-dark-200 rounded-xl pl-11 pr-5 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-100 transition-all">
-                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-            </div>
+            <form action="{{ route('products.index') }}" method="GET">
+                <div class="relative">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari produk..."
+                        class="w-full bg-dark-50 border border-dark-200 rounded-xl pl-11 pr-10 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-100 transition-all">
+                    <button type="submit" class="absolute left-3.5 top-1/2 -translate-y-1/2">
+                        <svg class="w-5 h-5 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
             <a href="{{ route('products.index') }}" class="flex items-center gap-3 py-2.5 text-sm font-medium text-dark-700 hover:text-primary-600 transition-colors">
                 <svg class="w-5 h-5 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                 Katalog Produk

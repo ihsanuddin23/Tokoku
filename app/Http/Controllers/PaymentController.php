@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Midtrans\Config;
-use Midtrans\Notification;
 use Midtrans\Snap;
 
 class PaymentController extends Controller
@@ -85,16 +84,16 @@ class PaymentController extends Controller
     public function webhook(Request $request): JsonResponse
     {
         try {
-            $notification = new Notification();
+            $orderId = $request->order_id;
+            $statusCode = $request->status_code;
+            $transactionStatus = $request->transaction_status;
+            $fraudStatus = $request->fraud_status;
+            $transactionId = $request->transaction_id;
+            $paymentType = $request->payment_type;
 
-            $orderId = $notification->order_id;
-            $statusCode = $notification->status_code;
-            $transactionStatus = $notification->transaction_status;
-            $fraudStatus = $notification->fraud_status;
-            $transactionId = $notification->transaction_id;
-            $paymentType = $notification->payment_type;
-
-            $payment = Payment::where('midtrans_order_id', $orderId)->firstOrFail();
+            if (! $orderId || ! $transactionStatus) {
+                return response()->json(['status' => 'error', 'message' => 'Invalid payload'], 400);
+            }
 
             $signatureKey = hash('sha512',
                 $orderId .
@@ -107,12 +106,12 @@ class PaymentController extends Controller
             if ($signatureKey !== $request->signature_key) {
                 Log::warning('Midtrans webhook signature mismatch', [
                     'order_id' => $orderId,
-                    'expected' => $signatureKey,
-                    'received' => $request->signature_key,
                 ]);
 
                 return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 403);
             }
+
+            $payment = Payment::where('midtrans_order_id', $orderId)->firstOrFail();
 
             if ($payment->transaction_status !== 'pending') {
                 return response()->json(['status' => 'ok', 'message' => 'Already processed']);
@@ -120,14 +119,14 @@ class PaymentController extends Controller
 
             $order = $payment->order;
 
-            DB::transaction(function () use ($payment, $order, $notification, $transactionStatus, $fraudStatus, $transactionId, $paymentType) {
+            DB::transaction(function () use ($request, $payment, $order, $transactionStatus, $fraudStatus, $transactionId, $paymentType) {
                 $payment->forceFill([
                     'midtrans_transaction_id' => $transactionId,
                     'transaction_status' => $transactionStatus,
                     'fraud_status' => $fraudStatus,
                     'payment_type' => $paymentType,
-                    'payment_channel' => $notification->bank ?? $notification->issuer ?? null,
-                    'raw_response' => (array) $notification,
+                    'payment_channel' => $request->bank ?? $request->issuer ?? null,
+                    'raw_response' => $request->all(),
                 ])->save();
 
                 if ($transactionStatus === 'settlement' || ($transactionStatus === 'capture' && $fraudStatus === 'accept')) {

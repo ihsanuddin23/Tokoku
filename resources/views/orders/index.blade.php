@@ -62,10 +62,19 @@
                                 <p class="text-xs text-dark-400">Total</p>
                                 <p class="text-lg font-bold font-display text-primary-600">{{ $order->formatted_grand_total }}</p>
                             </div>
-                            <a href="{{ route('orders.show', $order) }}" class="btn-secondary text-sm">
-                                Lihat Detail
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-                            </a>
+                            <div class="flex items-center gap-2">
+                                @if ($order->canBePaid())
+                                    <a href="{{ route('payment.show', $order) }}"
+                                        class="btn text-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-glow">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                        Bayar
+                                    </a>
+                                @endif
+                                <a href="{{ route('orders.show', $order) }}" class="btn-secondary text-sm">
+                                    Lihat Detail
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 @endforeach

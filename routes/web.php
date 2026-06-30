@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BecomeSellerController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SellerOrderController;
@@ -46,6 +47,8 @@ Route::get('/', function () {
 Route::get('/products', [ProductController::class, 'index'])->name('products.index')->middleware('throttle:60,1');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show')->middleware('throttle:60,1');
 Route::get('/stores/{slug}', [StoreController::class, 'show'])->name('stores.show');
+
+Route::post('/payment/webhook', [PaymentController::class, 'webhook'])->name('payment.webhook');
 
 // Guest routes (auth)
 require __DIR__.'/auth.php';
@@ -101,6 +104,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+    // Payment
+    Route::get('/payment/{order}', [PaymentController::class, 'show'])->name('payment.show');
+    Route::get('/payment/{order}/finish', [PaymentController::class, 'finish'])->name('payment.finish');
+    Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
 
     // Become Seller (buyer only)
     Route::middleware('role:buyer')->group(function () {

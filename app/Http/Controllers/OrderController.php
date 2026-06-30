@@ -129,7 +129,9 @@ class OrderController extends Controller
             Cart::where('user_id', $user->id)->delete();
         });
 
-        return redirect()->route('orders.index')->with('status', 'order-placed');
+        $order = Order::where('user_id', $user->id)->latest()->first();
+
+        return redirect()->route('payment.show', $order);
     }
 
     public function show(Request $request, Order $order): View

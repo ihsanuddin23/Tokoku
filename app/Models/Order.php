@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Order extends Model
@@ -44,6 +45,21 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function canBePaid(): bool
+    {
+        return $this->status === 'pending' && $this->payment_status === 'unpaid';
+    }
+
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->status, ['pending', 'paid']) && $this->payment_status !== 'refunded';
     }
 
     public function getFormattedSubtotalAttribute(): string

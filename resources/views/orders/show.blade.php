@@ -111,21 +111,30 @@
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
             <a href="{{ route('orders.index') }}" class="btn-secondary">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Kembali
             </a>
-            @if (in_array($order->status, ['pending', 'paid']))
-                <form method="POST" action="{{ route('orders.cancel', $order) }}" onsubmit="return confirm('Batalkan pesanan ini? Stok produk akan dikembalikan.')">
-                    @csrf
-                    @method('PATCH')
-                    <button type="submit" class="btn bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        Batalkan Pesanan
-                    </button>
-                </form>
-            @endif
+            <div class="flex items-center gap-3">
+                @if ($order->canBePaid())
+                    <a href="{{ route('payment.show', $order) }}"
+                        class="btn bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white shadow-glow hover:shadow-glow-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                        Bayar Sekarang
+                    </a>
+                @endif
+                @if ($order->canBeCancelled())
+                    <form method="POST" action="{{ route('orders.cancel', $order) }}" onsubmit="return confirm('Batalkan pesanan ini? Stok produk akan dikembalikan.')">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            Batalkan Pesanan
+                        </button>
+                    </form>
+                @endif
+            </div>
         </div>
     </div>
 </x-app-layout>

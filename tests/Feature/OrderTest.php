@@ -89,7 +89,8 @@ class OrderTest extends TestCase
             'notes' => 'Test order notes',
         ]);
 
-        $response->assertRedirect(route('orders.index'));
+        $order = \App\Models\Order::where('user_id', $buyer->id)->latest()->first();
+        $response->assertRedirect(route('payment.show', $order));
         $this->assertDatabaseHas('orders', [
             'user_id' => $buyer->id,
             'status' => 'pending',

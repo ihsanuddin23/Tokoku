@@ -62,9 +62,7 @@ class CartController extends Controller
 
     public function update(Request $request, Cart $cart): RedirectResponse
     {
-        if ($cart->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorize('update', $cart);
 
         if (! $cart->product) {
             $cart->delete();
@@ -90,9 +88,7 @@ class CartController extends Controller
 
     public function destroy(Request $request, Cart $cart): RedirectResponse
     {
-        if ($cart->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorize('delete', $cart);
 
         $cart->delete();
 

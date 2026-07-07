@@ -2,55 +2,77 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderStatusUpdated;
+use App\Notifications\OrderStatusNotification;
+use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class SellerOrderController extends Controller
 {
+    private const VALID_TRANSITIONS = [
+        'pending' => ['paid', 'cancelled'],
+        'paid' => ['shipped'],
+        'shipped' => ['completed'],
+        'completed' => [],
+        'cancelled' => [],
+    ];
+
     public function index(Request $request): View
     {
         $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
 
         $orderItems = OrderItem::where('seller_profile_id', $sellerProfile->id)
             ->with(['order.user', 'product'])
             ->latest()
             ->paginate(10);
 
-        $validTransitions = [
-            'pending' => ['paid', 'cancelled'],
-            'paid' => ['shipped'],
-            'shipped' => ['completed'],
-            'completed' => [],
-            'cancelled' => [],
-        ];
+        $validTransitions = self::VALID_TRANSITIONS;
 
         return view('seller.orders.index', compact('orderItems', 'validTransitions'));
     }
 
-    public function updateStatus(Request $request, OrderItem $orderItem): RedirectResponse
+    public function show(Request $request, Order $order): View
     {
-        if ($orderItem->seller_profile_id !== $request->user()->sellerProfile->id) {
+        $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
+
+        $hasItem = $order->items()->where('seller_profile_id', $sellerProfile->id)->exists();
+        if (! $hasItem) {
             abort(403);
         }
 
+        $order->load(['items' => function ($q) use ($sellerProfile) {
+            $q->where('seller_profile_id', $sellerProfile->id)->with('product');
+        }, 'user', 'address', 'payment']);
+
+        $validTransitions = self::VALID_TRANSITIONS;
+
+        return view('seller.orders.show', compact('order', 'validTransitions'));
+    }
+
+    public function updateStatus(Request $request, OrderItem $orderItem): RedirectResponse
+    {
+        $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
+        $this->authorize('updateStatus', $orderItem);
+
         $validated = $request->validate([
-            'status' => ['required', 'in:pending,paid,shipped,completed,cancelled'],
+            'status'          => ['required', 'in:pending,paid,shipped,completed,cancelled'],
+            'tracking_number' => ['nullable', 'string', 'max:100'],
         ]);
 
         $oldStatus = $orderItem->status;
+        $oldOrderStatus = $orderItem->order->status;
 
-        $validTransitions = [
-            'pending' => ['paid', 'cancelled'],
-            'paid' => ['shipped'],
-            'shipped' => ['completed'],
-            'completed' => [],
-            'cancelled' => [],
-        ];
+        $orderItem->load('product');
 
-        if (! in_array($validated['status'], $validTransitions[$oldStatus] ?? [])) {
+        if (! in_array($validated['status'], self::VALID_TRANSITIONS[$oldStatus] ?? [])) {
             return back()->with('info', "Tidak dapat mengubah status dari \"{$oldStatus}\" ke \"{$validated['status']}\".");
         }
 
@@ -73,7 +95,7 @@ class SellerOrderController extends Controller
 
             $order = $orderItem->order;
 
-            $allItems = $order->items;
+            $allItems = $order->items()->get();
             $statuses = $allItems->pluck('status')->unique();
 
             $orderStatus = match (true) {
@@ -98,6 +120,9 @@ class SellerOrderController extends Controller
             if ($validated['status'] === 'shipped') {
                 $orderUpdate['paid_at'] = $order->paid_at ?? now();
                 $orderUpdate['shipped_at'] = $order->shipped_at ?? now();
+                if (! empty($validated['tracking_number'])) {
+                    $orderUpdate['tracking_number'] = $validated['tracking_number'];
+                }
             }
 
             if ($validated['status'] === 'completed') {
@@ -106,8 +131,27 @@ class SellerOrderController extends Controller
                 $orderUpdate['completed_at'] = $order->completed_at ?? now();
             }
 
-            $order->update($orderUpdate);
+            $order->forceFill($orderUpdate)->save();
         });
+
+        $freshOrder = Order::with('user')->find($orderItem->order_id);
+        $newOrderStatus = $freshOrder->status;
+
+        if ($freshOrder->user) {
+            if ($oldOrderStatus !== $newOrderStatus) {
+                Mail::to($freshOrder->user->email)
+                    ->queue(new OrderStatusUpdated($freshOrder, $oldOrderStatus, $newOrderStatus));
+            }
+            $freshOrder->user->notify(
+                new OrderStatusNotification($freshOrder, $oldStatus, $validated['status'], route('orders.show', $freshOrder->id))
+            );
+        }
+
+        $referer = request()->headers->get('referer', '');
+        if (str_contains($referer, '/seller/orders/' . $orderItem->order_id)) {
+            return redirect()->route('seller.orders.show', $orderItem->order_id)
+                ->with('status', 'order-status-updated');
+        }
 
         return redirect()->route('seller.orders.index')
             ->with('status', 'order-status-updated');

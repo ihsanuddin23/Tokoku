@@ -86,15 +86,163 @@
                         </div>
                     </div>
 
+                    <!-- Shipping Courier -->
+                    <div class="card p-6" x-data="{ courier: '{{ old('shipping_courier', 'jne') }}' }">
+                        <h2 class="text-sm font-semibold font-display text-dark-900 mb-4">Pilih Jasa Pengiriman</h2>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            @php
+                            $couriers = [
+                                ['id' => 'jne',     'name' => 'JNE',      'service' => 'REG', 'cost' => 15000, 'eta' => '2-3 hari'],
+                                ['id' => 'jnt',     'name' => 'J&T',      'service' => 'EZ',  'cost' => 14000, 'eta' => '2-3 hari'],
+                                ['id' => 'sicepat', 'name' => 'SiCepat',  'service' => 'REG', 'cost' => 13000, 'eta' => '2-3 hari'],
+                                ['id' => 'pos',     'name' => 'Pos Indonesia', 'service' => 'Biasa', 'cost' => 12000, 'eta' => '3-5 hari'],
+                                ['id' => 'tiki',    'name' => 'TIKI',     'service' => 'REG', 'cost' => 13500, 'eta' => '2-4 hari'],
+                                ['id' => 'anteraja','name' => 'AnterAja', 'service' => 'Same Day', 'cost' => 20000, 'eta' => '1 hari'],
+                            ];
+                            @endphp
+                            @foreach ($couriers as $c)
+                                <label class="block cursor-pointer" @click="courier = '{{ $c['id'] }}'">
+                                    <input type="radio" name="shipping_courier" value="{{ $c['id'] }}" class="sr-only" @checked(old('shipping_courier', 'jne') === $c['id'])>
+                                    <div :class="courier === '{{ $c['id'] }}' ? 'border-primary-500 ring-2 ring-primary-100 bg-primary-50' : 'border-dark-200 hover:border-primary-300'" class="border rounded-2xl p-3 transition-all">
+                                        <p class="text-sm font-bold text-dark-900">{{ $c['name'] }}</p>
+                                        <p class="text-[10px] text-dark-500 mt-0.5">{{ $c['service'] }} · {{ $c['eta'] }}</p>
+                                        <p class="text-xs font-semibold text-primary-600 mt-1">Rp {{ number_format($c['cost'], 0, ',', '.') }}</p>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                        @error('shipping_courier')
+                            <p class="text-xs text-red-500 mt-2">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="card p-6" x-data="{ payMethod: '{{ old('payment_method', 'midtrans') }}' }">
+                        <h2 class="text-sm font-semibold font-display text-dark-900 mb-4">Metode Pembayaran</h2>
+                        <div class="space-y-3">
+                            <label class="block cursor-pointer" @click="payMethod = 'midtrans'">
+                                <input type="radio" name="payment_method" value="midtrans" class="sr-only" @checked(old('payment_method', 'midtrans') === 'midtrans')>
+                                <div :class="payMethod === 'midtrans' ? 'border-primary-500 ring-2 ring-primary-100 bg-primary-50' : 'border-dark-200 hover:border-primary-300'" class="border rounded-2xl p-4 flex items-center gap-3 transition-all">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-dark-900">Transfer / QRIS / Kartu Kredit</p>
+                                        <p class="text-xs text-dark-500">Bayar online via Midtrans (VA, QRIS, e-wallet, kartu kredit)</p>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="block cursor-pointer" @click="payMethod = 'cod'">
+                                <input type="radio" name="payment_method" value="cod" class="sr-only" @checked(old('payment_method') === 'cod')>
+                                <div :class="payMethod === 'cod' ? 'border-primary-500 ring-2 ring-primary-100 bg-primary-50' : 'border-dark-200 hover:border-primary-300'" class="border rounded-2xl p-4 flex items-center gap-3 transition-all">
+                                    <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-dark-900">COD (Bayar di Tempat)</p>
+                                        <p class="text-xs text-dark-500">Bayar tunai saat paket tiba. Siapkan uang pas.</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        @error('payment_method')
+                            <p class="text-xs text-red-500 mt-2">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Notes -->
                     <div class="card p-6">
                         <h2 class="text-sm font-semibold font-display text-dark-900 mb-3">Catatan (Opsional)</h2>
                         <textarea name="notes" rows="3" class="input-modern resize-none" placeholder="Catatan untuk penjual...">{{ old('notes') }}</textarea>
                     </div>
+
+                    <!-- Voucher -->
+                    <div class="card p-6" x-data="{
+                        voucherCode: '',
+                        discount: 0,
+                        applied: {{ session('applied_voucher') ? 'true' : 'false' }},
+                        appliedCode: '{{ session('applied_voucher')['code'] ?? '' }}',
+                        loading: false,
+                        error: '',
+                        success: '',
+                        applyVoucher() {
+                            this.loading = true;
+                            this.error = '';
+                            this.success = '';
+                            fetch('{{ route('voucher.apply') }}', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                                body: JSON.stringify({ code: this.voucherCode, shipping_courier: document.querySelector('input[name=shipping_courier]:checked')?.value || 'jne' })
+                            }).then(r => r.json()).then(data => {
+                                this.loading = false;
+                                if (data.message && data.discount === undefined) {
+                                    this.error = data.message;
+                                } else {
+                                    this.discount = data.discount;
+                                    this.applied = true;
+                                    this.appliedCode = this.voucherCode.toUpperCase();
+                                    this.success = data.message;
+                                    this.updateSummary();
+                                }
+                            }).catch(() => { this.loading = false; this.error = 'Terjadi kesalahan.'; });
+                        },
+                        removeVoucher() {
+                            fetch('{{ route('voucher.remove') }}', { method: 'DELETE', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content } });
+                            this.applied = false;
+                            this.discount = 0;
+                            this.voucherCode = '';
+                            this.success = '';
+                            this.updateSummary();
+                        },
+                        updateSummary() {
+                            document.dispatchEvent(new CustomEvent('voucher-updated', { detail: this.discount, bubbles: true }));
+                        }
+                    }">
+                        <h2 class="text-sm font-semibold font-display text-dark-900 mb-3">Voucher Diskon</h2>
+                        <template x-if="!applied">
+                            <div class="flex gap-2">
+                                <input type="text" x-model="voucherCode" @keyup.enter="applyVoucher()" placeholder="Masukkan kode voucher" class="flex-1 rounded-xl border-dark-200 bg-white px-4 py-2.5 text-sm text-dark-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all uppercase">
+                                <button type="button" @click="applyVoucher()" :disabled="loading || !voucherCode" class="btn-secondary text-sm whitespace-nowrap">
+                                    <span x-show="!loading">Pakai</span>
+                                    <span x-show="loading">...</span>
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="applied">
+                            <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-green-700" x-text="appliedCode"></p>
+                                    <p class="text-xs text-green-600" x-text="'Hemat Rp ' + discount.toLocaleString('id-ID')"></p>
+                                </div>
+                                <button type="button" @click="removeVoucher()" class="text-xs text-red-500 hover:text-red-700 font-medium">Hapus</button>
+                            </div>
+                        </template>
+                        <p x-show="error" x-text="error" class="text-xs text-red-500 mt-2"></p>
+                        <p x-show="success" x-text="success" class="text-xs text-green-600 mt-2"></p>
+                    </div>
                 </div>
 
                 <!-- Summary -->
-                <div class="card p-6 h-fit">
+                <div class="card p-6 h-fit" x-data="{
+                    courier: '{{ old('shipping_courier', 'jne') }}',
+                    payMethod: '{{ old('payment_method', 'midtrans') }}',
+                    subtotal: {{ $subtotal }},
+                    voucherDiscount: {{ session('applied_voucher')['discount'] ?? 0 }},
+                    costs: { jne: 15000, jnt: 14000, sicepat: 13000, pos: 12000, tiki: 13500, anteraja: 20000 },
+                    get shippingCost() { return this.costs[this.courier] || 0; },
+                    get grandTotal() { return Math.max(0, this.subtotal + this.shippingCost - this.voucherDiscount); },
+                    formatRp(v) { return 'Rp ' + v.toLocaleString('id-ID'); }
+                }" x-init="
+                    $watch('courier', v => courier = v);
+                    document.addEventListener('change', e => {
+                        if (e.target.name === 'shipping_courier') courier = e.target.value;
+                        if (e.target.name === 'payment_method') payMethod = e.target.value;
+                    });
+                    document.addEventListener('voucher-updated', e => {
+                        this.voucherDiscount = e.detail || 0;
+                    });
+                    window.dispatchEvent(new CustomEvent('voucher-discount', { detail: this.voucherDiscount }));
+                ">
                     <h3 class="text-sm font-semibold font-display text-dark-900 mb-4">Ringkasan Pembayaran</h3>
                     <div class="space-y-3 text-sm">
                         <div class="flex items-center justify-between text-dark-500">
@@ -103,14 +251,22 @@
                         </div>
                         <div class="flex items-center justify-between text-dark-500">
                             <span>Ongkos Kirim</span>
-                            <span class="font-medium text-dark-700">Rp 0</span>
+                            <span class="font-medium text-dark-700" x-text="formatRp(shippingCost)">Rp 0</span>
+                        </div>
+                        <div x-show="voucherDiscount > 0" class="flex items-center justify-between text-green-600">
+                            <span>Diskon Voucher</span>
+                            <span class="font-medium" x-text="'- ' + formatRp(voucherDiscount)">- Rp 0</span>
                         </div>
                         <div class="border-t border-dark-100 pt-3 flex items-center justify-between">
                             <span class="font-semibold text-dark-900">Total</span>
-                            <span class="font-bold text-primary-600 font-display text-lg">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                            <span class="font-bold text-primary-600 font-display text-lg" x-text="formatRp(grandTotal)">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <button type="submit" class="w-full btn-primary mt-5 justify-center" @disabled($addresses->isEmpty())>
+                    <div class="mt-4 p-3 rounded-xl text-xs" :class="payMethod === 'cod' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'">
+                        <span x-show="payMethod === 'midtrans'">💳 Bayar online via Midtrans setelah order dibuat</span>
+                        <span x-show="payMethod === 'cod'">💵 Bayar tunai saat kurir tiba di alamat Anda</span>
+                    </div>
+                    <button type="submit" class="w-full btn-primary mt-4 justify-center" @disabled($addresses->isEmpty())>
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Buat Pesanan
                     </button>

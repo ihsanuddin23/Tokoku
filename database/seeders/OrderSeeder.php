@@ -50,19 +50,27 @@ class OrderSeeder extends Seeder
                 'notes' => rand(0, 1) ? 'Mohon dikemas rapi.' : null,
             ]);
 
+            $couriers = ['jne' => ['service' => 'REG', 'cost' => 15000], 'jnt' => ['service' => 'EZ', 'cost' => 14000], 'sicepat' => ['service' => 'REG', 'cost' => 13000]];
+            $courierKey = array_rand($couriers);
+            $courier = $couriers[$courierKey];
+            $paymentMethod = rand(0, 3) === 0 ? 'cod' : 'midtrans';
+            $shippingCost = $courier['cost'];
+
             $order->forceFill([
-                'order_number' => 'ORD-' . strtoupper(Str::random(8)),
-                'status' => $status,
-                'subtotal' => $subtotal,
-                'shipping_cost' => 0,
-                'grand_total' => $subtotal,
-                'payment_method' => 'manual',
-                'payment_status' => in_array($status, ['completed', 'paid', 'shipped']) ? 'paid' : 'unpaid',
+                'order_number'     => 'ORD-' . strtoupper(Str::random(8)),
+                'status'           => $status,
+                'subtotal'         => $subtotal,
+                'shipping_cost'    => $shippingCost,
+                'grand_total'      => $subtotal + $shippingCost,
+                'payment_method'   => $paymentMethod,
+                'payment_status'   => in_array($status, ['completed', 'paid', 'shipped']) ? 'paid' : 'unpaid',
                 'shipping_address' => "{$address->recipient_name}, {$address->phone}\n{$address->full_address}\n{$address->district}, {$address->city}, {$address->province} {$address->postal_code}",
-                'paid_at' => in_array($status, ['paid', 'shipped', 'completed']) ? now()->subDays(rand(1, 5)) : null,
-                'shipped_at' => in_array($status, ['shipped', 'completed']) ? now()->subDays(rand(1, 3)) : null,
-                'completed_at' => $status === 'completed' ? now()->subDays(rand(0, 2)) : null,
-                'cancelled_at' => $status === 'cancelled' ? now()->subDays(rand(0, 1)) : null,
+                'shipping_courier' => $courierKey,
+                'shipping_service' => $courier['service'],
+                'paid_at'          => in_array($status, ['paid', 'shipped', 'completed']) ? now()->subDays(rand(1, 5)) : null,
+                'shipped_at'       => in_array($status, ['shipped', 'completed']) ? now()->subDays(rand(1, 3)) : null,
+                'completed_at'     => $status === 'completed' ? now()->subDays(rand(0, 2)) : null,
+                'cancelled_at'     => $status === 'cancelled' ? now()->subDays(rand(0, 1)) : null,
             ])->save();
 
             (new OrderItem)->forceFill([

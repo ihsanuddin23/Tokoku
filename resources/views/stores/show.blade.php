@@ -1,4 +1,13 @@
 <x-app-layout>
+    @section('meta_title', $store->store_name . ' — ' . config('app.name'))
+    @section('meta_description', \Illuminate\Support\Str::limit(strip_tags($store->description ?? ''), 160))
+    @section('og_title', $store->store_name . ' — ' . config('app.name'))
+    @section('og_description', \Illuminate\Support\Str::limit(strip_tags($store->description ?? ''), 160))
+    @section('og_type', 'website')
+    @if ($store->logo)
+        @section('og_image', asset('storage/' . $store->logo))
+    @endif
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Breadcrumb -->
         <div class="flex items-center gap-2 text-xs text-dark-400 mb-6">
@@ -18,7 +27,7 @@
                 @endif
             </div>
             <div class="bg-white px-6 sm:px-8 pb-6 -mt-12 relative">
-                <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4" x-data="{ following: {{ $isFollowing ? 'true' : 'false' }}, count: {{ $followerCount }} }">
                     <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 overflow-hidden shrink-0 ring-4 ring-white shadow-lg -mt-12">
                         @if ($store->logo)
                             <img src="{{ asset('storage/' . $store->logo) }}" alt="{{ $store->store_name }}" class="w-full h-full object-cover">
@@ -35,15 +44,49 @@
                                 <svg class="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                             @endif
                         </div>
-                        <div class="flex items-center gap-3 text-sm text-dark-500">
+                        <div class="flex flex-wrap items-center gap-3 text-sm text-dark-500">
                             <span class="flex items-center gap-1">
                                 <svg class="w-4 h-4 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                 {{ $store->city }}
                             </span>
                             <span class="text-dark-300">|</span>
                             <span>{{ $store->products()->active()->count() }} produk</span>
+                            <span class="text-dark-300">|</span>
+                            <span>{{ number_format($totalSold) }} terjual</span>
+                            <span class="text-dark-300">|</span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                <span x-text="count.toLocaleString('id-ID')">{{ number_format($followerCount) }}</span> pengikut
+                            </span>
+                            @if ($reviewCount > 0)
+                                <span class="text-dark-300">|</span>
+                                <span class="flex items-center gap-1 text-amber-500 font-medium">
+                                    ★ {{ number_format($avgRating, 1) }}
+                                    <span class="text-dark-400 font-normal">({{ $reviewCount }} ulasan)</span>
+                                </span>
+                            @endif
                         </div>
                     </div>
+                    @auth
+                        <div class="shrink-0">
+                            <template x-if="!following">
+                                <button type="button"
+                                    x-on:click="fetch('{{ route('stores.follow', $store) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.json()).then(d => { if (d.status === 'followed') { following = true; count = d.followerCount; } }).catch(() => {})"
+                                    class="btn-primary text-sm px-5 py-2.5 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                    Ikuti
+                                </button>
+                            </template>
+                            <template x-if="following">
+                                <button type="button"
+                                    x-on:click="fetch('{{ route('stores.unfollow', $store) }}', { method: 'DELETE', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.json()).then(d => { if (d.status === 'unfollowed') { following = false; count = d.followerCount; } }).catch(() => {})"
+                                    class="btn-secondary text-sm px-5 py-2.5 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    Mengikuti
+                                </button>
+                            </template>
+                        </div>
+                    @endauth
                 </div>
                 @if ($store->description)
                     <p class="text-sm text-dark-600 leading-relaxed mt-4 max-w-3xl">{{ $store->description }}</p>
@@ -51,19 +94,28 @@
             </div>
         </div>
 
-        <!-- Sort Bar -->
-        <div class="flex items-center justify-between mb-5">
-            <p class="text-sm text-dark-500">Produk dari toko ini</p>
+        <!-- Filter & Sort Bar -->
+        <form method="GET" action="{{ route('stores.show', $store->store_slug) }}" class="flex flex-wrap items-center gap-3 mb-5">
+            <p class="text-sm text-dark-500 mr-auto">Produk dari toko ini</p>
+            @if ($storeCategories->count() > 1)
+                <select name="category" class="bg-dark-50 border border-dark-200 rounded-lg px-3 py-1.5 text-xs text-dark-700 outline-none focus:border-primary-400 cursor-pointer" onchange="this.form.submit()">
+                    <option value="">Semua Kategori</option>
+                    @foreach ($storeCategories as $cat)
+                        <option value="{{ $cat->id }}" @selected(request('category') == $cat->id)>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+            @endif
             <div class="flex items-center gap-2">
                 <span class="text-xs text-dark-400">Urutkan:</span>
-                <select name="sort" class="bg-dark-50 border border-dark-200 rounded-lg px-3 py-1.5 text-xs text-dark-700 outline-none focus:border-primary-400 cursor-pointer" onchange="window.location.href='{{ route('stores.show', $store->store_slug) }}' + (this.value ? '?sort=' + this.value : '')">
-                    <option value="newest" @selected(request('sort', 'newest') === 'newest')>Terbaru</option>
-                    <option value="popular" @selected(request('sort') === 'popular')>Terpopuler</option>
+                <select name="sort" class="bg-dark-50 border border-dark-200 rounded-lg px-3 py-1.5 text-xs text-dark-700 outline-none focus:border-primary-400 cursor-pointer" onchange="this.form.submit()">
+                    <option value="popular" @selected(request('sort', 'popular') === 'popular')>Terpopuler</option>
+                    <option value="newest" @selected(request('sort') === 'newest')>Terbaru</option>
+                    <option value="rating" @selected(request('sort') === 'rating')>Rating Tertinggi</option>
                     <option value="price_asc" @selected(request('sort') === 'price_asc')>Harga Terendah</option>
                     <option value="price_desc" @selected(request('sort') === 'price_desc')>Harga Tertinggi</option>
                 </select>
             </div>
-        </div>
+        </form>
 
         <!-- Products Grid -->
         @if ($products->isEmpty())
@@ -90,13 +142,14 @@
                             @endif
                         </div>
                         <div class="p-4 space-y-2">
+                            <p class="text-[10px] text-dark-400 truncate">{{ $product->category?->name }}</p>
                             <h3 class="text-sm font-medium text-dark-900 line-clamp-2 leading-snug min-h-[2.5rem]">{{ $product->name }}</h3>
                             <p class="text-base font-bold font-display text-primary-600">{{ $product->formatted_price }}</p>
                             <div class="flex items-center justify-between pt-1">
-                                @if ($product->stock > 0)
-                                    <span class="text-[10px] text-green-600 font-medium">Stok: {{ $product->stock }}</span>
+                                @if ($product->review_count > 0)
+                                    <span class="text-[10px] text-amber-500 font-medium">★ {{ number_format($product->rating, 1) }} ({{ $product->review_count }})</span>
                                 @else
-                                    <span class="text-[10px] text-red-500 font-medium">Habis</span>
+                                    <span class="text-[10px] text-dark-300">Belum ada ulasan</span>
                                 @endif
                                 <span class="text-[10px] text-dark-400">{{ $product->total_sold }} terjual</span>
                             </div>

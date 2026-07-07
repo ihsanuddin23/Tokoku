@@ -288,14 +288,14 @@
                 <span class="text-xs font-semibold uppercase tracking-wider text-primary-600">Kategori</span>
                 <h2 class="text-2xl font-bold font-display text-dark-900 mt-1">Kategori Populer</h2>
             </div>
-            <a href="{{ route('products.index') }}" class="link-arrow">
+            <a href="{{ route('categories.index') }}" class="link-arrow">
                 Lihat Semua
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
             </a>
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
             @foreach ($categories as $category)
-                <a href="{{ route('products.index', ['category' => $category->id]) }}" class="card card-hover p-5 text-center group cursor-pointer">
+                <a href="{{ route('categories.show', $category->slug) }}" class="card card-hover p-5 text-center group cursor-pointer">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center mx-auto mb-3 group-hover:from-primary-400 group-hover:to-primary-600 transition-all duration-300">
                         <span class="text-2xl">{{ $category->icon ?? '📦' }}</span>
                     </div>

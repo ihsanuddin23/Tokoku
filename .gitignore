@@ -26,3 +26,4 @@ yarn-error.log
 desktop.ini
 *.sqlite
 *.sqlite-journal
+keys.txt

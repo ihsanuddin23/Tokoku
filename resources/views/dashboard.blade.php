@@ -65,6 +65,13 @@
                 <p class="text-sm font-semibold text-dark-900">Profil</p>
                 <p class="text-xs text-dark-400 mt-0.5">Edit profil</p>
             </a>
+            <a href="{{ route('stores.followed') }}" class="card card-hover p-5 group animate-fade-in-up" style="animation-delay: 0.2s;">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                </div>
+                <p class="text-sm font-semibold text-dark-900">Toko Diikuti</p>
+                <p class="text-xs text-dark-400 mt-0.5">Toko favorit</p>
+            </a>
         </div>
 
         <!-- Recent Orders + Sidebar -->

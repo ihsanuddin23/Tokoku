@@ -155,7 +155,7 @@ class SellerProductTest extends TestCase
         $response = $this->actingAs($seller)->delete("/seller/products/{$product->id}");
 
         $response->assertRedirect(route('seller.products.index'));
-        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        $this->assertSoftDeleted('products', ['id' => $product->id]);
     }
 
     public function test_unverified_seller_cannot_access_products(): void

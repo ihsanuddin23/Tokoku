@@ -7,7 +7,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-    protected $fillable = [];
+    protected $fillable = [
+        'order_id',
+        'midtrans_order_id',
+        'midtrans_transaction_id',
+        'snap_token',
+        'payment_type',
+        'payment_channel',
+        'gross_amount',
+        'transaction_status',
+        'fraud_status',
+        'paid_at',
+        'raw_response',
+    ];
 
     protected $casts = [
         'gross_amount' => 'decimal:2',

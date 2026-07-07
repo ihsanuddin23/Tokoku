@@ -51,8 +51,11 @@
                 <ul class="space-y-3 text-sm">
                     <li><a href="{{ route('home') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Beranda</a></li>
                     <li><a href="{{ route('products.index') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Produk</a></li>
-                    <li><a href="#" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Cara Belanja</a></li>
-                    <li><a href="#" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Pusat Bantuan</a></li>
+                    <li><a href="{{ route('categories.index') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Kategori</a></li>
+                    <li><a href="{{ route('faq') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Cara Belanja</a></li>
+                    <li><a href="{{ route('faq') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Pusat Bantuan</a></li>
+                    <li><a href="{{ route('about') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Tentang Kami</a></li>
+                    <li><a href="{{ route('contact.index') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Hubungi Kami</a></li>
                 </ul>
             </div>
 
@@ -67,8 +70,8 @@
                         <li><a href="{{ route('dashboard') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Dashboard</a></li>
                         <li><a href="{{ route('orders.index') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Pesanan Saya</a></li>
                     @endguest
-                    <li><a href="#" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Kebijakan Privasi</a></li>
-                    <li><a href="#" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Syarat & Ketentuan</a></li>
+                    <li><a href="{{ route('legal.privacy') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Kebijakan Privasi</a></li>
+                    <li><a href="{{ route('legal.terms') }}" class="text-dark-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1.5 group"><span class="w-1 h-1 rounded-full bg-dark-600 group-hover:bg-primary-400 transition-colors"></span>Syarat & Ketentuan</a></li>
                 </ul>
             </div>
         </div>

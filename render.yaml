@@ -1,0 +1,114 @@
+services:
+  - type: web
+    name: tokoku
+    runtime: php
+    plan: free
+    region: singapore
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      npm install && npm run build
+    startCommand: |
+      php artisan migrate --force
+      php artisan storage:link
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+      php artisan schedule:run >> /dev/null 2>&1 &
+      php artisan serve --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase: { name: tokoku-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: tokoku-db, property: port }
+      - key: DB_DATABASE
+        fromDatabase: { name: tokoku-db, property: database }
+      - key: DB_USERNAME
+        fromDatabase: { name: tokoku-db, property: username }
+      - key: DB_PASSWORD
+        fromDatabase: { name: tokoku-db, property: password }
+      - key: MIDTRANS_SERVER_KEY
+        sync: false
+      - key: MIDTRANS_CLIENT_KEY
+        sync: false
+      - key: FILESYSTEM_DISK
+        value: public
+      - key: MIDTRANS_IS_PRODUCTION
+        sync: false
+      - key: MAIL_MAILER
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: TokoKu
+      - key: QUEUE_CONNECTION
+        value: database
+
+  - type: worker
+    name: tokoku-queue
+    runtime: php
+    plan: free
+    region: singapore
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+    startCommand: |
+      php artisan queue:work --tries=3 --delay=60 --timeout=90
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase: { name: tokoku-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: tokoku-db, property: port }
+      - key: DB_DATABASE
+        fromDatabase: { name: tokoku-db, property: database }
+      - key: DB_USERNAME
+        fromDatabase: { name: tokoku-db, property: username }
+      - key: DB_PASSWORD
+        fromDatabase: { name: tokoku-db, property: password }
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: MAIL_MAILER
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: TokoKu
+
+databases:
+  - name: tokoku-db
+    plan: free
+    region: singapore

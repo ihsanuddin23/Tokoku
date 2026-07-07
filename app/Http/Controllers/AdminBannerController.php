@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Banner;
+use App\Services\ImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -28,7 +29,7 @@ class AdminBannerController extends Controller
         ]);
 
         if ($request->hasFile('image_path')) {
-            $validated['image_path'] = $request->file('image_path')->store('banners', 'public');
+            $validated['image_path'] = app(ImageService::class)->uploadBanner($request->file('image_path'));
         } else {
             $validated['image_path'] = null;
         }
@@ -55,7 +56,7 @@ class AdminBannerController extends Controller
             if ($banner->image_path) {
                 Storage::disk('public')->delete($banner->image_path);
             }
-            $validated['image_path'] = $request->file('image_path')->store('banners', 'public');
+            $validated['image_path'] = app(ImageService::class)->uploadBanner($request->file('image_path'));
         }
 
         $validated['is_active'] = $request->boolean('is_active', false);

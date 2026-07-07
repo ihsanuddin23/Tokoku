@@ -6,7 +6,22 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 
-        <title>{{ config('app.name', 'TokoKu') }}</title>
+        <title>@yield('meta_title', config('app.name', 'TokoKu'))</title>
+        <meta name="description" content="@yield('meta_description', 'TokoKu — Belanja mudah, jualan untung. Platform e-commerce multi-role dengan produk terlengkap.')">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="@yield('og_title', config('app.name', 'TokoKu'))">
+        <meta property="og:description" content="@yield('og_description', 'TokoKu — Belanja mudah, jualan untung.')">
+        <meta property="og:type" content="@yield('og_type', 'website')">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:image" content="@yield('og_image', asset('favicon.svg'))">
+        <meta property="og:site_name" content="{{ config('app.name', 'TokoKu') }}">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="@yield('og_title', config('app.name', 'TokoKu'))">
+        <meta name="twitter:description" content="@yield('og_description', 'TokoKu — Belanja mudah, jualan untung.')">
+        <meta name="twitter:image" content="@yield('og_image', asset('favicon.svg'))">
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
@@ -52,6 +67,17 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                     <span class="text-[10px] font-medium">Kategori</span>
                 </a>
+                @auth
+                <a href="{{ route('wishlist') }}" class="flex flex-col items-center gap-1 px-3 py-1.5 transition-colors {{ request()->routeIs('wishlist') ? 'text-red-500' : 'text-dark-600 hover:text-red-500' }}">
+                    <div class="relative">
+                        <svg class="w-6 h-6" fill="{{ request()->routeIs('wishlist') ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                        @if (auth()->user()->wishlists()->count() > 0)
+                            <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{{ auth()->user()->wishlists()->count() }}</span>
+                        @endif
+                    </div>
+                    <span class="text-[10px] font-medium">Wishlist</span>
+                </a>
+                @endauth
                 <a href="{{ route('cart') }}" class="flex flex-col items-center gap-1 px-3 py-1.5 text-dark-600 hover:text-primary-600 transition-colors {{ request()->routeIs('cart') ? 'text-primary-600' : '' }}">
                     <div class="relative">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>

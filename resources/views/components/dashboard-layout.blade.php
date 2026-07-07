@@ -114,14 +114,8 @@
                         <!-- Title (mobile) -->
                         <span class="lg:hidden text-sm font-semibold text-dark-900">{{ $sidebarTitle }}</span>
 
-                        <!-- Search (desktop) -->
-                        <div class="hidden lg:flex flex-1 max-w-md">
-                            <div class="relative w-full group">
-                                <input type="text" placeholder="Cari produk, pesanan, user..."
-                                    class="w-full bg-dark-50 border border-dark-200/60 rounded-xl pl-11 pr-5 py-2.5 text-sm outline-none transition-all duration-200 focus:bg-white focus:border-primary-400 focus:ring-4 focus:ring-primary-100 placeholder-dark-400">
-                                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400 group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </div>
-                        </div>
+                        <!-- Spacer (desktop) -->
+                        <div class="hidden lg:block flex-1"></div>
 
                         <!-- Right Actions -->
                         <div class="flex items-center gap-2 shrink-0">
@@ -129,36 +123,47 @@
                             <div class="relative" x-data="{ notifOpen: false }">
                                 <button @click="notifOpen = !notifOpen" class="relative p-2.5 text-dark-600 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 group">
                                     <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-secondary-500 rounded-full animate-pulse"></span>
+                                    @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
+                                    @if ($unreadCount > 0)
+                                        <span class="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                                    @endif
                                 </button>
                                 <div x-show="notifOpen" @click.outside="notifOpen = false" x-transition.origin.top.right
                                     class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-card-hover py-2 border border-dark-100 animate-scale-in" style="display: none;">
                                     <div class="px-4 py-3 border-b border-dark-100 flex items-center justify-between">
                                         <p class="text-sm font-semibold text-dark-900">Notifikasi</p>
-                                        <span class="badge-primary text-[10px]">2 Baru</span>
+                                        @if ($unreadCount > 0)
+                                            <form method="POST" action="{{ route('notifications.read-all') }}">
+                                                @csrf
+                                                <button type="submit" class="text-[10px] text-primary-600 hover:text-primary-700 font-medium">Tandai semua dibaca</button>
+                                            </form>
+                                        @endif
                                     </div>
-                                    <div class="max-h-80 overflow-y-auto scrollbar-thin">
-                                        <a href="#" class="flex items-start gap-3 px-4 py-3 hover:bg-dark-50 transition-colors">
-                                            <div class="w-9 h-9 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
-                                                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <div class="max-h-80 overflow-y-auto scrollbar-thin divide-y divide-dark-50">
+                                        @php $notifications = auth()->user()->notifications()->take(10)->get(); @endphp
+                                        @foreach ($notifications as $notif)
+                                            <form method="POST" action="{{ route('notifications.read', $notif->id) }}">
+                                                @csrf
+                                                <button type="submit" class="w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-dark-50 transition-colors {{ $notif->read_at ? 'opacity-60' : 'bg-primary-50/30' }}">
+                                                    <span class="w-9 h-9 rounded-xl bg-primary-100 flex items-center justify-center shrink-0 text-lg">
+                                                        {{ $notif->data['icon'] ?? '📦' }}
+                                                    </span>
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="text-sm font-medium text-dark-900">{{ $notif->data['title'] ?? 'Notifikasi' }}</p>
+                                                        <p class="text-xs text-dark-400 mt-0.5">{{ $notif->data['message'] ?? '' }}</p>
+                                                        <p class="text-[10px] text-dark-300 mt-1">{{ $notif->created_at->diffForHumans() }}</p>
+                                                    </div>
+                                                    @if(!$notif->read_at)
+                                                        <span class="text-[10px] text-primary-600 hover:text-primary-700 font-medium shrink-0">Baca</span>
+                                                    @endif
+                                                </button>
+                                            </form>
+                                        @endforeach
+                                        @if ($notifications->isEmpty())
+                                            <div class="px-4 py-8 text-center">
+                                                <p class="text-sm text-dark-400">Tidak ada notifikasi</p>
                                             </div>
-                                            <div class="min-w-0">
-                                                <p class="text-sm font-medium text-dark-900">Order baru masuk</p>
-                                                <p class="text-xs text-dark-400 mt-0.5">Order #ORD-001 dari pembeli</p>
-                                            </div>
-                                        </a>
-                                        <a href="#" class="flex items-start gap-3 px-4 py-3 hover:bg-dark-50 transition-colors">
-                                            <div class="w-9 h-9 rounded-xl bg-secondary-100 flex items-center justify-center shrink-0">
-                                                <svg class="w-5 h-5 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p class="text-sm font-medium text-dark-900">Stok produk menipis</p>
-                                                <p class="text-xs text-dark-400 mt-0.5">3 produk perlu restock segera</p>
-                                            </div>
-                                        </a>
-                                    </div>
-                                    <div class="border-t border-dark-100 p-2">
-                                        <a href="#" class="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium py-2 rounded-lg hover:bg-primary-50 transition-colors">Lihat Semua</a>
+                                        @endif
                                     </div>
                                 </div>
                             </div>

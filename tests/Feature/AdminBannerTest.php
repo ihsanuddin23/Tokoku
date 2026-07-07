@@ -72,10 +72,27 @@ class AdminBannerTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($admin)->delete("/admin/banners/{$banner->id}");
+        $response = $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => time()])->delete("/admin/banners/{$banner->id}");
 
         $response->assertRedirect(route('admin.banners.index'));
-        $this->assertDatabaseMissing('banners', ['id' => $banner->id]);
+        $this->assertSoftDeleted('banners', ['id' => $banner->id]);
+    }
+
+    public function test_admin_delete_banner_requires_password_confirmation(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $banner = Banner::create([
+            'title' => 'Confirm Me',
+            'image_path' => null,
+            'link' => '/products',
+            'order' => 1,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->delete("/admin/banners/{$banner->id}");
+
+        $response->assertRedirect(route('password.confirm'));
+        $this->assertDatabaseHas('banners', ['id' => $banner->id]);
     }
 
     public function test_non_admin_cannot_access_banners(): void

@@ -13,11 +13,15 @@ class Order extends Model
     protected $fillable = [
         'address_id',
         'notes',
+        'tracking_number',
+        'order_number',
+        'discount_amount',
     ];
 
     protected $casts = [
         'subtotal' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'grand_total' => 'decimal:2',
         'paid_at' => 'datetime',
         'shipped_at' => 'datetime',
@@ -28,7 +32,9 @@ class Order extends Model
     protected static function booted(): void
     {
         static::creating(function (Order $order) {
-            $order->order_number = $order->order_number ?? 'ORD-' . strtoupper(Str::random(10));
+            if (! $order->order_number) {
+                $order->order_number = 'ORD-' . strtoupper(Str::random(10));
+            }
         });
     }
 

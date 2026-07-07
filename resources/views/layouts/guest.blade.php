@@ -6,7 +6,22 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 
-        <title>{{ config('app.name', 'TokoKu') }}</title>
+        <title>@yield('meta_title', config('app.name', 'TokoKu'))</title>
+        <meta name="description" content="@yield('meta_description', 'TokoKu — Belanja mudah, jualan untung. Platform e-commerce multi-role dengan produk terlengkap.')">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="@yield('og_title', config('app.name', 'TokoKu'))">
+        <meta property="og:description" content="@yield('og_description', 'TokoKu — Belanja mudah, jualan untung.')">
+        <meta property="og:type" content="@yield('og_type', 'website')">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:image" content="@yield('og_image', asset('favicon.svg'))">
+        <meta property="og:site_name" content="{{ config('app.name', 'TokoKu') }}">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="@yield('og_title', config('app.name', 'TokoKu'))">
+        <meta name="twitter:description" content="@yield('og_description', 'TokoKu — Belanja mudah, jualan untung.')">
+        <meta name="twitter:image" content="@yield('og_image', asset('favicon.svg'))">
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>

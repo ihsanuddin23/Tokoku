@@ -1,4 +1,7 @@
 <x-app-layout>
+    @section('meta_title', 'Semua Produk — ' . config('app.name'))
+    @section('meta_description', 'Jelajahi ribuan produk terlengkap di TokoKu. Belanja online aman, mudah, dan terpercaya.')
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">
             <div class="flex items-center gap-2 text-xs text-dark-400 mb-3">
@@ -120,14 +123,17 @@
                                     @endif
                                 </div>
                                 <div class="p-4 space-y-2">
-                                    <p class="text-xs text-dark-400 truncate">{{ $product->sellerProfile->store_name }}</p>
+                                    <p class="text-xs text-dark-400 truncate">{{ $product->sellerProfile?->store_name }}</p>
                                     <h3 class="text-sm font-medium text-dark-900 line-clamp-2 leading-snug min-h-[2.5rem]">{{ $product->name }}</h3>
                                     <p class="text-base font-bold font-display text-primary-600">{{ $product->formatted_price }}</p>
                                     <div class="flex items-center justify-between pt-1">
-                                        @if ($product->stock > 0)
-                                            <span class="text-[10px] text-green-600 font-medium">Stok: {{ $product->stock }}</span>
+                                        @if ($product->review_count > 0)
+                                            <span class="text-[10px] text-amber-500 font-medium flex items-center gap-0.5">
+                                                ★ {{ number_format($product->rating, 1) }}
+                                                <span class="text-dark-400">({{ $product->review_count }})</span>
+                                            </span>
                                         @else
-                                            <span class="text-[10px] text-red-500 font-medium">Habis</span>
+                                            <span class="text-[10px] text-dark-300">Belum ada ulasan</span>
                                         @endif
                                         <span class="text-[10px] text-dark-400">{{ $product->total_sold }} terjual</span>
                                     </div>

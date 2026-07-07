@@ -1,4 +1,13 @@
 <x-app-layout>
+    @section('meta_title', $product->name . ' — ' . config('app.name'))
+    @section('meta_description', \Illuminate\Support\Str::limit(strip_tags($product->description ?? ''), 160))
+    @section('og_title', $product->name . ' — ' . config('app.name'))
+    @section('og_description', \Illuminate\Support\Str::limit(strip_tags($product->description ?? ''), 160))
+    @section('og_type', 'product')
+    @if ($product->first_image)
+        @section('og_image', asset('storage/' . $product->first_image))
+    @endif
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Breadcrumb -->
         <div class="flex items-center gap-2 text-xs text-dark-400 mb-6">
@@ -37,7 +46,18 @@
                         <span class="badge-primary text-[10px]">{{ $product->category->name }}</span>
                         <span class="badge {{ $product->condition === 'new' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }} text-[10px]">{{ $product->condition_label }}</span>
                     </div>
-                    <h1 class="text-2xl font-bold font-display text-dark-900 mb-2">{{ $product->name }}</h1>
+                    <div class="flex items-start justify-between gap-3">
+                        <h1 class="text-2xl font-bold font-display text-dark-900 mb-2 flex-1">{{ $product->name }}</h1>
+                        @auth
+                            <form method="POST" action="{{ route('wishlist.toggle', $product) }}" class="shrink-0">
+                                @csrf
+                                <button type="submit" title="{{ $isWishlisted ? 'Hapus dari Wishlist' : 'Tambah ke Wishlist' }}"
+                                    class="w-10 h-10 rounded-xl border {{ $isWishlisted ? 'border-red-300 bg-red-50 text-red-500' : 'border-dark-200 bg-white text-dark-400 hover:border-red-300 hover:text-red-500' }} flex items-center justify-center transition-all">
+                                    <svg class="w-5 h-5" fill="{{ $isWishlisted ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                </button>
+                            </form>
+                        @endauth
+                    </div>
                     <div class="flex items-center gap-3 text-sm text-dark-500">
                         <span class="flex items-center gap-1">
                             <svg class="w-4 h-4 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -47,6 +67,13 @@
                         </span>
                         <span class="text-dark-300">|</span>
                         <span>{{ $product->total_sold }} terjual</span>
+                        @if ($product->review_count > 0)
+                            <span class="text-dark-300">|</span>
+                            <span class="flex items-center gap-1 text-amber-500 font-medium">
+                                ★ {{ number_format($product->rating, 1) }}
+                                <span class="text-dark-400 font-normal">({{ $product->review_count }} ulasan)</span>
+                            </span>
+                        @endif
                     </div>
                 </div>
 
@@ -104,27 +131,164 @@
             </div>
         </div>
 
+        <!-- Reviews Section -->
+        <div class="mb-10" x-data="{ showForm: false }">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h2 class="text-lg font-semibold font-display text-dark-900">Ulasan Pembeli</h2>
+                    @if ($product->review_count > 0)
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-3xl font-bold text-dark-900">{{ number_format($product->rating, 1) }}</span>
+                            <div>
+                                <div class="flex text-amber-400 text-lg">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        @if ($i <= round($product->rating))
+                                            <span>★</span>
+                                        @else
+                                            <span class="text-dark-200">★</span>
+                                        @endif
+                                    @endfor
+                                </div>
+                                <p class="text-xs text-dark-400">{{ $product->review_count }} ulasan</p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @if (session('status') === 'review-submitted')
+                <div class="glass border-green-200/50 text-green-700 text-sm font-medium px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-soft mb-4">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Ulasan berhasil dikirim. Terima kasih!
+                </div>
+            @endif
+
+            <!-- Reviews List -->
+            @if ($reviews->isEmpty())
+                <div class="card p-8 text-center text-sm text-dark-400">Belum ada ulasan untuk produk ini.</div>
+            @else
+                <div class="space-y-4 mb-4">
+                    @foreach ($reviews as $review)
+                        <div class="card p-5">
+                            <div class="flex items-start gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                    {{ strtoupper(substr($review->user->name, 0, 1)) }}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-sm font-semibold text-dark-900">{{ $review->user->name }}</p>
+                                        <p class="text-xs text-dark-400">{{ $review->created_at->diffForHumans() }}</p>
+                                    </div>
+                                    <div class="flex text-amber-400 text-sm my-1">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <span class="{{ $i <= $review->rating ? 'text-amber-400' : 'text-dark-200' }}">★</span>
+                                        @endfor
+                                    </div>
+                                    @if ($review->comment)
+                                        <p class="text-sm text-dark-600">{{ $review->comment }}</p>
+                                    @endif
+                                    @if ($review->seller_response)
+                                        <div class="mt-3 ml-4 pl-4 border-l-2 border-primary-200 bg-primary-50/50 rounded-r-lg py-2 px-3">
+                                            <p class="text-xs font-semibold text-primary-700 mb-1">Balasan Penjual</p>
+                                            <p class="text-sm text-dark-600">{{ $review->seller_response }}</p>
+                                            <p class="text-[10px] text-dark-400 mt-1">{{ $review->seller_responded_at->format('d M Y') }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                {{ $reviews->links() }}
+            @endif
+        </div>
+
         <!-- Related Products -->
         @if ($related->isNotEmpty())
             <div>
-                <h2 class="text-lg font-semibold font-display text-dark-900 mb-4">Produk Serupa</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold font-display text-dark-900">Produk Serupa</h2>
+                    <a href="{{ route('categories.show', $product->category->slug) }}" class="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors">
+                        Lihat Semua →
+                    </a>
+                </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     @foreach ($related as $item)
-                        <a href="{{ route('products.show', $item) }}" class="card card-hover overflow-hidden group">
-                            <div class="h-36 bg-dark-50 overflow-hidden">
-                                @if ($item->first_image)
-                                    <img src="{{ asset('storage/' . $item->first_image) }}" alt="{{ $item->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center">
-                                        <svg class="w-10 h-10 text-dark-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <div class="card card-hover overflow-hidden group relative animate-fade-in-up" style="animation-delay: {{ ($loop->iteration - 1) * 0.04 }}s">
+                            @auth
+                                <form method="POST" action="{{ route('wishlist.toggle', $item) }}" class="absolute top-2 right-2 z-10">
+                                    @csrf
+                                    <button type="submit"
+                                        class="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-sm hover:bg-red-50 transition-colors"
+                                        title="{{ in_array($item->id, $wishlistedIds) ? 'Hapus dari Wishlist' : 'Tambah ke Wishlist' }}">
+                                        <svg class="w-3.5 h-3.5 {{ in_array($item->id, $wishlistedIds) ? 'text-red-500' : 'text-dark-300' }}"
+                                            fill="{{ in_array($item->id, $wishlistedIds) ? 'currentColor' : 'none' }}"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endauth
+                            <a href="{{ route('products.show', $item) }}" class="block">
+                                <div class="h-36 bg-dark-50 overflow-hidden relative">
+                                    @if ($item->first_image)
+                                        <img src="{{ asset('storage/' . $item->first_image) }}" alt="{{ $item->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <svg class="w-10 h-10 text-dark-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        </div>
+                                    @endif
+                                    @if ($item->condition === 'used')
+                                        <span class="absolute top-2 left-2 badge bg-amber-100 text-amber-700 text-[9px]">Bekas</span>
+                                    @endif
+                                </div>
+                                <div class="p-3 space-y-1.5">
+                                    <p class="text-[10px] text-dark-400 truncate">{{ $item->sellerProfile?->store_name }}</p>
+                                    <h3 class="text-sm font-medium text-dark-900 line-clamp-2 leading-snug min-h-[2.5rem]">{{ $item->name }}</h3>
+                                    <p class="text-sm font-bold text-primary-600">{{ $item->formatted_price }}</p>
+                                    <div class="flex items-center justify-between pt-0.5">
+                                        @if ($item->review_count > 0)
+                                            <span class="text-[10px] text-amber-500 font-medium flex items-center gap-0.5">
+                                                ★ {{ number_format($item->rating, 1) }}
+                                                <span class="text-dark-400">({{ $item->review_count }})</span>
+                                            </span>
+                                        @else
+                                            <span class="text-[10px] text-dark-300">Belum ada ulasan</span>
+                                        @endif
+                                        <span class="text-[10px] text-dark-400">{{ $item->total_sold }} terjual</span>
                                     </div>
-                                @endif
-                            </div>
-                            <div class="p-3 space-y-1">
-                                <h3 class="text-sm font-medium text-dark-900 line-clamp-2">{{ $item->name }}</h3>
-                                <p class="text-sm font-bold text-primary-600">{{ $item->formatted_price }}</p>
-                            </div>
-                        </a>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        <!-- Recently Viewed -->
+        @if ($recentlyViewed->isNotEmpty())
+            <div>
+                <h2 class="text-lg font-semibold font-display text-dark-900 mb-4">Baru Saja Dilihat</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    @foreach ($recentlyViewed as $item)
+                        <div class="card card-hover overflow-hidden group animate-fade-in-up" style="animation-delay: {{ ($loop->iteration - 1) * 0.04 }}s">
+                            <a href="{{ route('products.show', $item) }}" class="block">
+                                <div class="aspect-square bg-dark-50 overflow-hidden">
+                                    @if ($item->images && count($item->images) > 0)
+                                        <img src="{{ asset('storage/' . $item->images[0]) }}" alt="{{ $item->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center text-dark-300">
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="p-3">
+                                    <p class="text-xs text-dark-400 mb-0.5">{{ $item->category->name }}</p>
+                                    <p class="text-sm font-medium text-dark-900 line-clamp-2 mb-1">{{ $item->name }}</p>
+                                    <p class="text-sm font-bold text-primary-600">{{ $item->formatted_price }}</p>
+                                </div>
+                            </a>
+                        </div>
                     @endforeach
                 </div>
             </div>

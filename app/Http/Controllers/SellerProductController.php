@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\ImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +15,7 @@ class SellerProductController extends Controller
     public function index(Request $request): View
     {
         $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
 
         $products = $sellerProfile->products()
             ->with('category')
@@ -61,15 +63,26 @@ class SellerProductController extends Controller
             'images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
 
+        $imageService = app(ImageService::class);
         $images = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $images[] = $image->store('products', 'public');
+                $images[] = $imageService->uploadProductImage($image);
             }
         }
         $validated['images'] = $images;
 
-        $request->user()->sellerProfile->products()->create($validated);
+        $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
+
+        $product = $sellerProfile->products()->create($validated);
+
+        // Notify followers about new product
+        $sellerProfile = $request->user()->sellerProfile;
+        $followers = $sellerProfile->followers()->with('user')->get();
+        foreach ($followers as $follower) {
+            $follower->user->notify(new \App\Notifications\NewProductFromFollowedStore($product, $sellerProfile));
+        }
 
         return redirect()->route('seller.products.index')
             ->with('status', 'product-created');
@@ -77,9 +90,9 @@ class SellerProductController extends Controller
 
     public function edit(Request $request, Product $product): View
     {
-        if ($product->seller_profile_id !== $request->user()->sellerProfile->id) {
-            abort(403);
-        }
+        $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
+        $this->authorize('update', $product);
 
         $categories = Category::where('is_active', true)->orderBy('name')->get();
 
@@ -88,9 +101,9 @@ class SellerProductController extends Controller
 
     public function update(Request $request, Product $product): RedirectResponse
     {
-        if ($product->seller_profile_id !== $request->user()->sellerProfile->id) {
-            abort(403);
-        }
+        $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
+        $this->authorize('update', $product);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:200'],
@@ -125,8 +138,9 @@ class SellerProductController extends Controller
             if (count($currentImages) + $newCount > 5) {
                 return back()->with('info', 'Maksimal 5 gambar per produk. Hapus beberapa gambar lama terlebih dahulu.');
             }
+            $imageService = app(ImageService::class);
             foreach ($request->file('images') as $image) {
-                $currentImages[] = $image->store('products', 'public');
+                $currentImages[] = $imageService->uploadProductImage($image);
             }
         }
 
@@ -141,9 +155,9 @@ class SellerProductController extends Controller
 
     public function destroy(Request $request, Product $product): RedirectResponse
     {
-        if ($product->seller_profile_id !== $request->user()->sellerProfile->id) {
-            abort(403);
-        }
+        $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
+        $this->authorize('delete', $product);
 
         if ($product->orderItems()->exists()) {
             return back()->with('info', 'Produk tidak dapat dihapus karena sudah ada dalam pesanan. Nonaktifkan produk sebagai gantinya.');
@@ -169,12 +183,17 @@ class SellerProductController extends Controller
         ]);
 
         $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
         $updated = 0;
 
-        foreach ($validated['stocks'] as $productId => $stock) {
-            $product = Product::find($productId);
+        $products = Product::whereIn('id', array_keys($validated['stocks']))
+            ->where('seller_profile_id', $sellerProfile->id)
+            ->get()->keyBy('id');
 
-            if ($product && $product->seller_profile_id === $sellerProfile->id) {
+        foreach ($validated['stocks'] as $productId => $stock) {
+            $product = $products->get($productId);
+
+            if ($product) {
                 $product->update(['stock' => $stock]);
                 $updated++;
             }

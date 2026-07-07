@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SellerProfile;
+use App\Services\ImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +15,7 @@ class SellerStoreController extends Controller
     public function edit(Request $request): View
     {
         $store = $request->user()->sellerProfile;
+        abort_unless($store, 403, 'Anda bukan seller.');
 
         return view('seller.store.edit', compact('store'));
     }
@@ -21,6 +23,7 @@ class SellerStoreController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $store = $request->user()->sellerProfile;
+        abort_unless($store, 403, 'Anda bukan seller.');
 
         $validated = $request->validate([
             'store_name'  => ['required', 'string', 'max:100'],
@@ -34,14 +37,14 @@ class SellerStoreController extends Controller
             if ($store->logo) {
                 Storage::disk('public')->delete($store->logo);
             }
-            $validated['logo'] = $request->file('logo')->store('stores', 'public');
+            $validated['logo'] = app(ImageService::class)->uploadStoreLogo($request->file('logo'));
         }
 
         if ($request->hasFile('banner')) {
             if ($store->banner) {
                 Storage::disk('public')->delete($store->banner);
             }
-            $validated['banner'] = $request->file('banner')->store('stores', 'public');
+            $validated['banner'] = app(ImageService::class)->uploadStoreBanner($request->file('banner'));
         }
 
         if ($store->store_name !== $validated['store_name']) {

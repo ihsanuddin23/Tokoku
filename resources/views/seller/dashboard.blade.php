@@ -13,9 +13,13 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             Pesanan
         </a>
-        <a href="#" class="sidebar-link">
+        <a href="{{ route('seller.reports.index') }}" class="sidebar-link">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             Laporan
+        </a>
+        <a href="{{ route('seller.vouchers.index') }}" class="sidebar-link">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+            Voucher
         </a>
         <a href="{{ route('seller.store.edit') }}" class="sidebar-link">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 002 2h4a2 2 0 002-2" /></svg>
@@ -56,10 +60,7 @@
                 <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-glow shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </div>
-                <span class="badge-success text-[10px]">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
-                    12%
-                </span>
+                <span class="text-[10px] text-dark-400 font-medium">Hari Ini</span>
             </div>
             <p class="text-xs text-dark-500 font-medium">Penjualan Hari Ini</p>
             <p class="text-2xl font-bold font-display text-dark-900 mt-1">Rp {{ number_format($todayRevenue, 0, ',', '.') }}</p>
@@ -69,10 +70,7 @@
                 <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-secondary-400 to-secondary-600 flex items-center justify-center shadow-sm shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
-                <span class="badge-success text-[10px]">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
-                    8%
-                </span>
+                <span class="text-[10px] text-dark-400 font-medium">Bulan Ini</span>
             </div>
             <p class="text-xs text-dark-500 font-medium">Penjualan Bulan Ini</p>
             <p class="text-2xl font-bold font-display text-dark-900 mt-1">Rp {{ number_format($monthRevenue, 0, ',', '.') }}</p>
@@ -82,10 +80,7 @@
                 <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-sm shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
                 </div>
-                <span class="badge-warning text-[10px]">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
-                    3%
-                </span>
+                <span class="text-[10px] text-dark-400 font-medium">Total</span>
             </div>
             <p class="text-xs text-dark-500 font-medium">Total Order</p>
             <p class="text-2xl font-bold font-display text-dark-900 mt-1">{{ $totalOrders }}</p>
@@ -95,13 +90,20 @@
                 <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-sm shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
                 </div>
-                <span class="badge-success text-[10px]">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
-                    Baru
-                </span>
+                <span class="text-[10px] text-dark-400 font-medium">Aktif</span>
             </div>
             <p class="text-xs text-dark-500 font-medium">Produk Aktif</p>
             <p class="text-2xl font-bold font-display text-dark-900 mt-1">{{ $activeProducts }}</p>
+        </div>
+        <div class="stat-card card-hover">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-sm shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </div>
+                <span class="text-[10px] text-dark-400 font-medium">Pengikut</span>
+            </div>
+            <p class="text-xs text-dark-500 font-medium">Pengikut Toko</p>
+            <p class="text-2xl font-bold font-display text-dark-900 mt-1">{{ $sellerProfile->followerCount() }}</p>
         </div>
     </div>
 
@@ -114,16 +116,17 @@
                     <h2 class="text-lg font-semibold font-display text-dark-900">Grafik Penjualan</h2>
                     <p class="text-xs text-dark-500 mt-0.5">7 hari terakhir</p>
                 </div>
-                <div class="flex gap-2">
-                    <button class="badge-primary text-[10px] cursor-pointer">Mingguan</button>
-                    <button class="badge bg-dark-100 text-dark-500 text-[10px] cursor-pointer">Bulanan</button>
-                </div>
+                <span class="badge-primary text-[10px]">7 Hari Terakhir</span>
             </div>
             <div class="flex items-end justify-between gap-3 h-48 pt-4">
-                @foreach (['Sen' => 45, 'Sel' => 62, 'Rab' => 38, 'Kam' => 71, 'Jum' => 85, 'Sab' => 55, 'Min' => 30] as $day => $height)
+                @foreach ($salesData as $data)
                     <div class="flex-1 flex flex-col items-center gap-2 group">
-                        <div class="w-full bg-gradient-to-t from-primary-500 to-primary-300 rounded-t-lg transition-all duration-300 group-hover:from-primary-600 group-hover:to-primary-400 group-hover:scale-y-105 origin-bottom" style="height: {{ $height }}%"></div>
-                        <span class="text-[10px] text-dark-400 font-medium">{{ $day }}</span>
+                        <div class="w-full bg-gradient-to-t from-primary-500 to-primary-300 rounded-t-lg transition-all duration-300 group-hover:from-primary-600 group-hover:to-primary-400 group-hover:scale-y-105 origin-bottom relative" style="height: {{ $maxRevenue > 0 ? max(5, ($data['revenue'] / $maxRevenue) * 100) : 5 }}%">
+                            @if ($data['revenue'] > 0)
+                                <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-dark-600 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Rp {{ number_format($data['revenue'], 0, ',', '.') }}</span>
+                            @endif
+                        </div>
+                        <span class="text-[10px] text-dark-400 font-medium">{{ $data['label'] }}</span>
                     </div>
                 @endforeach
             </div>
@@ -151,7 +154,7 @@
                         <p class="text-xs text-dark-500">Kelola order masuk</p>
                     </div>
                 </a>
-                <a href="#" class="flex items-center gap-3 p-3 rounded-xl bg-dark-50 hover:bg-primary-50 transition-colors group">
+                <a href="{{ route('seller.reports.index') }}" class="flex items-center gap-3 p-3 rounded-xl bg-dark-50 hover:bg-primary-50 transition-colors group">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                     </div>
@@ -222,4 +225,33 @@
             </a>
         </div>
     </div>
+
+    @if ($lowStockProducts->isNotEmpty())
+    <!-- Low Stock Alert -->
+    <div class="card p-6 mt-5 border-amber-200/50">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.876c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <div>
+                <h2 class="text-lg font-semibold font-display text-dark-900">Stok Menipis</h2>
+                <p class="text-xs text-dark-500">Produk dengan stok 5 atau kurang</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            @foreach ($lowStockProducts as $product)
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-amber-50/50">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-dark-700 truncate">{{ $product->name }}</p>
+                        <p class="text-xs text-amber-600 font-semibold">Sisa {{ $product->stock }} pcs</p>
+                    </div>
+                    <a href="{{ route('seller.products.edit', $product) }}" class="text-xs text-primary-600 hover:text-primary-700 font-medium">Restock</a>
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 </x-dashboard-layout>

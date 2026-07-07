@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -36,6 +37,8 @@ class AdminUserController extends Controller
         }
 
         $user->forceFill(['is_active' => ! $user->is_active])->save();
+
+        ActivityLog::log('toggle_active', 'users', "Toggled active status for user {$user->name} ({$user->email})", ['user_id' => $user->id, 'is_active' => $user->is_active]);
 
         return back()->with('status', $user->is_active ? 'user-activated' : 'user-deactivated');
     }

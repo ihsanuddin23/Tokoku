@@ -86,6 +86,8 @@ class OrderTest extends TestCase
         $response = $this->actingAs($buyer)->post('/orders', [
             'address_id' => $address->id,
             'notes' => 'Test order notes',
+            'shipping_courier' => 'jne',
+            'payment_method' => 'midtrans',
         ]);
 
         $order = \App\Models\Order::where('user_id', $buyer->id)->latest()->first();
@@ -109,6 +111,8 @@ class OrderTest extends TestCase
 
         $this->actingAs($buyer)->post('/orders', [
             'address_id' => $address->id,
+            'shipping_courier' => 'jne',
+            'payment_method' => 'midtrans',
         ]);
 
         $this->assertEquals(18, $product->fresh()->stock);
@@ -121,6 +125,8 @@ class OrderTest extends TestCase
 
         $this->actingAs($buyer)->post('/orders', [
             'address_id' => $address->id,
+            'shipping_courier' => 'jne',
+            'payment_method' => 'midtrans',
         ]);
 
         $order = Order::where('user_id', $buyer->id)->first();
@@ -136,6 +142,8 @@ class OrderTest extends TestCase
 
         $this->actingAs($buyer)->post('/orders', [
             'address_id' => $address->id,
+            'shipping_courier' => 'jne',
+            'payment_method' => 'midtrans',
         ]);
 
         $order = Order::where('user_id', $buyer->id)->first();
@@ -152,6 +160,8 @@ class OrderTest extends TestCase
 
         $this->actingAs($buyer)->post('/orders', [
             'address_id' => $address->id,
+            'shipping_courier' => 'jne',
+            'payment_method' => 'midtrans',
         ]);
 
         $order = Order::where('user_id', $buyer->id)->first();
@@ -169,6 +179,8 @@ class OrderTest extends TestCase
 
         $this->actingAs($buyer)->post('/orders', [
             'address_id' => $address->id,
+            'shipping_courier' => 'jne',
+            'payment_method' => 'midtrans',
         ]);
 
         $order = Order::where('user_id', $buyer->id)->first();
@@ -183,6 +195,8 @@ class OrderTest extends TestCase
 
         $this->actingAs($buyer)->post('/orders', [
             'address_id' => $address->id,
+            'shipping_courier' => 'jne',
+            'payment_method' => 'midtrans',
         ]);
 
         $order = Order::where('user_id', $buyer->id)->first();

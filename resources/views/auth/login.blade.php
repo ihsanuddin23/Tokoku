@@ -73,15 +73,8 @@
                 </button>
             </form>
 
-            <!-- Divider -->
-            <div class="flex items-center gap-4 my-6">
-                <div class="flex-1 h-px bg-dark-200"></div>
-                <span class="text-xs text-dark-400 font-medium">ATAU</span>
-                <div class="flex-1 h-px bg-dark-200"></div>
-            </div>
-
             <!-- Register Link -->
-            <p class="text-center text-sm text-dark-500">
+            <p class="text-center text-sm text-dark-500 mt-6">
                 Belum punya akun?
                 <a href="{{ route('register') }}" class="text-primary-600 font-semibold hover:text-primary-700 hover:underline transition-colors">Daftar sekarang</a>
             </p>

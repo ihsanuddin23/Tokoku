@@ -8,7 +8,7 @@
 
 Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern, fitur transaksi lengkap, dan keamanan yang kuat. Dibangun sebagai proyek portofolio menggunakan Laravel 12, Tailwind CSS, dan Alpine.js.
 
-**Status:** MVP Lengkap — Fase 1, 2, 3 selesai. Siap untuk demo atau soft launch.
+**Status:** MVP Lengkap — Fase 1–6 selesai. Siap untuk demo dan deployment.
 
 ## Demo
 
@@ -21,6 +21,8 @@ Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern
 - **Frontend:** Tailwind CSS, Alpine.js, Blade Templates
 - **Database:** MySQL (production) / SQLite (development)
 - **Auth:** Laravel Breeze dengan multi-role (buyer, seller, admin)
+- **Payment Gateway:** Midtrans Snap (sandbox)
+- **PDF Export:** DomPDF (invoice & laporan)
 - **Build Tool:** Vite
 
 ## Fitur MVP yang Tersedia
@@ -49,9 +51,18 @@ Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern
 ### Transaksi
 - Keranjang belanja (tambah, update qty, hapus)
 - Checkout dengan pilihan alamat
+- Integrasi Midtrans Snap (sandbox) — VA, QRIS, kartu kredit
+- Webhook handler untuk konfirmasi pembayaran otomatis
 - Manajemen pesanan (riwayat, detail, batalkan)
 - Restorasi stok otomatis saat pesanan dibatalkan
 - Seller dapat mengupdate status item pesanan (pending → paid → shipped → completed)
+- Invoice PDF download per order
+
+### Dashboard & Analytics
+- **Seller Dashboard:** grafik penjualan 7 hari, stat cards (revenue harian/bulanan, total order, produk aktif), low stock alerts
+- **Admin Dashboard:** grafik transaksi 7 hari, stat cards (total user, seller aktif, total transaksi, total revenue), transaksi & user terbaru
+- Export laporan PDF untuk seller & admin dengan filter tanggal
+- Notifikasi email: order baru ke seller, status update ke buyer, low stock alert
 
 ### Admin
 - Verifikasi pendaftaran seller (approve/reject)
@@ -106,7 +117,7 @@ php artisan serve
 php artisan test
 ```
 
-Saat ini tersedia **75 test** dengan **165 assertions** yang mencakup autentikasi, katalog, keranjang, pesanan, produk seller, banner admin, dan profil.
+Saat ini tersedia **88 test** dengan **195 assertions** yang mencakup autentikasi, katalog, keranjang, pesanan, produk seller, banner admin, profil, payment gateway, invoice PDF, export laporan, dashboard analytics, dan notifikasi email.
 
 ## Screenshots
 
@@ -169,22 +180,63 @@ Saat ini tersedia **75 test** dengan **165 assertions** yang mencakup autentikas
 User (Buyer/Seller/Admin)
     │
     ▼
-Laravel Routes → Middleware (Auth, Role, Active)
+Laravel Routes → Middleware (Auth, Role, Active, VerifiedSeller)
     │
     ▼
-Controllers → Models → SQLite/MySQL
+Controllers → Models → MySQL
     │
     ▼
 Blade Views + Tailwind CSS + Alpine.js
+    │
+    ▼
+Midtrans Snap (Payment) · DomPDF (Invoice/Reports) · SMTP (Email)
 ```
+
+### ERD (Entity Relationship Diagram)
+
+```
+users ──< seller_profiles ──< products >── categories
+  │           │                  │
+  │           │                  ├──< product_images
+  │           │                  │
+  │           └──< order_items >── orders
+  │                                    │
+  ├──< addresses                     ├──< payments
+  │                                    │
+  ├──< carts ──< cart_items           └──< reviews
+  │
+  └──< seller_verifications
+
+banners (standalone)
+```
+
+### Database Tables (14)
+
+| # | Table | Description |
+|---|-------|-------------|
+| 1 | `users` | All users (buyer, seller, admin) |
+| 2 | `seller_profiles` | Seller store profiles |
+| 3 | `categories` | Product categories |
+| 4 | `products` | Product listings |
+| 5 | `product_images` | Product photos |
+| 6 | `addresses` | Shipping addresses |
+| 7 | `carts` | Shopping carts |
+| 8 | `cart_items` | Items in carts |
+| 9 | `orders` | Order transactions |
+| 10 | `order_items` | Order line items |
+| 11 | `payments` | Midtrans payment records |
+| 12 | `reviews` | Product reviews & ratings |
+| 13 | `banners` | Homepage banners |
+| 14 | `seller_verifications` | Seller verification requests |
 
 ## Roadmap
 
 - Fase 1 — Autentikasi & Profil ✅
 - Fase 2 — Produk & Katalog ✅
 - Fase 3 — Transaksi & Order ✅
-- Fase 4 — Payment Gateway (Planned)
-- Fase 5 — Dashboard Analytics & Laporan (Planned)
+- Fase 4 — Payment Gateway (Midtrans) ✅
+- Fase 5 — Dashboard Analytics, Laporan & Notifikasi ✅
+- Fase 6 — Polish & Deploy ✅
 
 ## Struktur Dokumentasi
 

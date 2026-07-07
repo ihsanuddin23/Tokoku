@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewOrderSeller;
+use App\Mail\OrderStatusUpdated;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
@@ -9,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Midtrans\Config;
 use Midtrans\Snap;
@@ -25,9 +28,7 @@ class PaymentController extends Controller
 
     public function show(Request $request, Order $order): View|RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorize('payment', $order);
 
         if (! $order->canBePaid()) {
             return redirect()->route('orders.show', $order)
@@ -50,13 +51,25 @@ class PaymentController extends Controller
 
     public function finish(Request $request, Order $order): RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorize('payment', $order);
 
         $status = $request->query('transaction_status');
 
+        // If client reports settlement/capture, verify with Midtrans to prevent fake payment
         if (in_array($status, ['settlement', 'capture'])) {
+            if ($order->status === 'pending') {
+                $verified = $this->verifyTransactionWithMidtrans($order);
+
+                if ($verified) {
+                    $this->markOrderAsPaid($order, $request);
+                    return redirect()->route('payment.success', $order)
+                        ->with('status', 'payment-success');
+                }
+
+                return redirect()->route('orders.show', $order)
+                    ->with('error', 'Verifikasi pembayaran gagal. Silakan hubungi dukungan jika dana telah dibayar.');
+            }
+
             return redirect()->route('payment.success', $order)
                 ->with('status', 'payment-success');
         }
@@ -70,11 +83,76 @@ class PaymentController extends Controller
             ->with('error', 'Pembayaran gagal atau dibatalkan.');
     }
 
+    private function verifyTransactionWithMidtrans(Order $order): bool
+    {
+        $payment = $order->payment;
+
+        if (! $payment || ! $payment->midtrans_order_id) {
+            return false;
+        }
+
+        try {
+            $transactionStatus = \Midtrans\Transaction::status($payment->midtrans_order_id);
+            $realStatus = $transactionStatus->transaction_status ?? null;
+            $fraudStatus = $transactionStatus->fraud_status ?? null;
+
+            if (in_array($realStatus, ['settlement', 'capture']) && $fraudStatus !== 'deny') {
+                return true;
+            }
+
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Midtrans verifyTransaction error: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+            ]);
+
+            return false;
+        }
+    }
+
+    private function markOrderAsPaid(Order $order, Request $request): void
+    {
+        $payment = $order->payment;
+        $paymentType = $request->query('payment_type') ?? ($payment?->payment_type ?? 'midtrans');
+        $transactionId = $request->query('transaction_id') ?? ($payment?->midtrans_transaction_id);
+
+        DB::transaction(function () use ($order, $payment, $request, $paymentType, $transactionId) {
+            if ($payment) {
+                $payment->fill([
+                    'midtrans_transaction_id' => $transactionId,
+                    'transaction_status' => $request->query('transaction_status') ?? 'settlement',
+                    'payment_type' => $paymentType,
+                    'paid_at' => now(),
+                ])->save();
+            }
+
+            $order->forceFill([
+                'status' => 'paid',
+                'payment_status' => 'paid',
+                'payment_method' => $paymentType,
+                'paid_at' => now(),
+            ])->save();
+
+            $order->items()->where('status', 'pending')->update(['status' => 'paid']);
+        });
+
+        // Send email notifications
+        $order->load('items.sellerProfile.user', 'user');
+
+        if ($order->user) {
+            Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, 'pending', 'paid'));
+        }
+
+        foreach ($order->items as $item) {
+            if ($item->sellerProfile && $item->sellerProfile->user) {
+                Mail::to($item->sellerProfile->user->email)->queue(new NewOrderSeller($item));
+            }
+        }
+    }
+
     public function success(Request $request, Order $order): View|RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorize('payment', $order);
 
         $order->load('items.product', 'address', 'payment');
 
@@ -111,16 +189,16 @@ class PaymentController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 403);
             }
 
-            $payment = Payment::where('midtrans_order_id', $orderId)->firstOrFail();
+            return DB::transaction(function () use ($request, $orderId, $transactionStatus, $fraudStatus, $transactionId, $paymentType) {
+                $payment = Payment::where('midtrans_order_id', $orderId)->lockForUpdate()->firstOrFail();
 
-            if ($payment->transaction_status !== 'pending') {
-                return response()->json(['status' => 'ok', 'message' => 'Already processed']);
-            }
+                if ($payment->transaction_status !== 'pending') {
+                    return response()->json(['status' => 'ok', 'message' => 'Already processed']);
+                }
 
-            $order = $payment->order;
+                $order = $payment->order;
 
-            DB::transaction(function () use ($request, $payment, $order, $transactionStatus, $fraudStatus, $transactionId, $paymentType) {
-                $payment->forceFill([
+                $payment->fill([
                     'midtrans_transaction_id' => $transactionId,
                     'transaction_status' => $transactionStatus,
                     'fraud_status' => $fraudStatus,
@@ -130,7 +208,7 @@ class PaymentController extends Controller
                 ])->save();
 
                 if ($transactionStatus === 'settlement' || ($transactionStatus === 'capture' && $fraudStatus === 'accept')) {
-                    $payment->forceFill(['paid_at' => now()])->save();
+                    $payment->fill(['paid_at' => now()])->save();
 
                     $order->forceFill([
                         'status' => 'paid',
@@ -146,16 +224,29 @@ class PaymentController extends Controller
                         'payment_status' => 'failed',
                     ])->save();
                 }
-            });
 
-            return response()->json(['status' => 'ok']);
+                if ($transactionStatus === 'settlement' || ($transactionStatus === 'capture' && $fraudStatus === 'accept')) {
+                    $order->load('items.sellerProfile.user', 'user');
+                    if ($order->user) {
+                        Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, 'pending', 'paid'));
+                    }
+
+                    foreach ($order->items as $item) {
+                        if ($item->sellerProfile && $item->sellerProfile->user) {
+                            Mail::to($item->sellerProfile->user->email)->queue(new NewOrderSeller($item));
+                        }
+                    }
+                }
+
+                return response()->json(['status' => 'ok']);
+            });
 
         } catch (\Exception $e) {
             Log::error('Midtrans webhook error: ' . $e->getMessage(), [
                 'payload' => $request->all(),
             ]);
 
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            return response()->json(['status' => 'error', 'message' => 'Internal server error'], 500);
         }
     }
 
@@ -198,14 +289,13 @@ class PaymentController extends Controller
 
             $snapToken = Snap::getSnapToken($params);
 
-            $payment = new Payment();
-            $payment->forceFill([
+            $payment = Payment::create([
                 'order_id' => $order->id,
                 'midtrans_order_id' => $midtransOrderId,
                 'snap_token' => $snapToken,
                 'gross_amount' => $order->grand_total,
                 'transaction_status' => 'pending',
-            ])->save();
+            ]);
 
             return $payment;
 

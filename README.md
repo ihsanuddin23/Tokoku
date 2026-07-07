@@ -14,7 +14,7 @@ Dibangun sebagai **proyek portofolio** menggunakan Laravel 12, Tailwind CSS, Alp
 
 ## Demo
 
-- **Live Demo:** [https://tokoku-demo.example.com](https://tokoku-demo.example.com) *(ganti dengan URL Anda)*
+- **Live Demo:** [https://tokoku.onrender.com](https://tokoku.onrender.com)
 - **Screenshots:** Lihat di bawah atau langsung ke folder [docs/screenshots/](docs/screenshots/)
 
 ## Tech Stack

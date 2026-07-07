@@ -1,6 +1,6 @@
 <nav x-data="{ open: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 20"
-    class="sticky top-0 z-50 transition-all duration-300"
-    :class="scrolled ? 'glass shadow-soft' : 'bg-white/80 backdrop-blur-sm'">
+    class="sticky top-0 z-50 bg-white border-b border-dark-100 transition-shadow duration-300"
+    :class="scrolled ? 'shadow-soft' : ''">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 gap-4">
             <!-- Logo -->

@@ -8,7 +8,7 @@
 
 Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern, fitur transaksi lengkap, dan keamanan yang kuat. Dibangun sebagai proyek portofolio menggunakan Laravel 12, Tailwind CSS, dan Alpine.js.
 
-**Status:** MVP Lengkap — Fase 1–6 selesai. Siap untuk demo dan deployment.
+**Status:** MVP Lengkap — Fase 1–6 selesai + fitur tambahan. Siap untuk demo dan deployment.
 
 ## Demo
 
@@ -39,9 +39,11 @@ Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern
 
 ### Katalog & Produk
 - Homepage modern dengan banner slider, kategori, produk terlaris, flash sale, dan testimonial
+- **Live search** dengan Fetch API + Alpine.js (dropdown hasil real-time di navbar)
 - Katalog publik dengan filter (kategori, harga, kondisi, rating minimum) & sorting
-- Halaman detail produk dengan produk terkait
-- Halaman profil toko publik
+- **Halaman kategori terpisah** — daftar semua kategori & detail kategori dengan filter produk
+- Halaman detail produk dengan produk terkait, ulasan & rating
+- Halaman profil toko publik dengan follow/unfollow
 - CRUD produk oleh seller dengan upload multiple foto (max 5)
 - Bulk update stok oleh seller
 - Filter & pencarian di tabel produk seller
@@ -50,33 +52,56 @@ Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern
 
 ### Transaksi
 - Keranjang belanja (tambah, update qty, hapus)
-- Checkout dengan pilihan alamat
+- Checkout dengan pilihan alamat & kurir
 - Integrasi Midtrans Snap (sandbox) — VA, QRIS, kartu kredit
 - Webhook handler untuk konfirmasi pembayaran otomatis
+- **Voucher diskon** — seller & admin bisa buat voucher (persen/fixed, min belanja, max penggunaan)
 - Manajemen pesanan (riwayat, detail, batalkan)
 - Restorasi stok otomatis saat pesanan dibatalkan
+- **Sistem retur/refund** — buyer bisa ajukan retur, seller/admin proses
 - Seller dapat mengupdate status item pesanan (pending → paid → shipped → completed)
+- **Payout/pencairan** — seller tarik saldo, admin approve/reject
 - Invoice PDF download per order
 
 ### Dashboard & Analytics
 - **Seller Dashboard:** grafik penjualan 7 hari, stat cards (revenue harian/bulanan, total order, produk aktif), low stock alerts
 - **Admin Dashboard:** grafik transaksi 7 hari, stat cards (total user, seller aktif, total transaksi, total revenue), transaksi & user terbaru
-- Export laporan PDF untuk seller & admin dengan filter tanggal
+- Export laporan PDF & CSV untuk seller & admin dengan filter tanggal
 - Notifikasi email: order baru ke seller, status update ke buyer, low stock alert
+- **Notifikasi in-app** — order status, produk baru dari toko yang di-follow
+- **Manajemen review** oleh seller (balas ulasan pembeli)
 
 ### Admin
 - Verifikasi pendaftaran seller (approve/reject)
 - Manajemen banner homepage
 - Manajemen kategori
 - Manajemen user (aktifkan/nonaktifkan)
+- Manajemen voucher global
+- Manajemen pembayaran & payout
+- Manajemen retur/refund
+- Activity logs (audit trail)
+- Pengaturan aplikasi (nama, email, phone, alamat)
+
+### Halaman Publik & SEO
+- Halaman **About Us** dengan statistik & cerita brand
+- Halaman **Contact Us** dengan form & info kontak dinamis dari settings
+- Halaman **FAQ/Bantuan** dengan kategori pertanyaan
+- Halaman **Terms & Privacy Policy**
+- **Sitemap.xml** & **robots.txt** dinamis
+- URL SEO-friendly (slug-based untuk kategori & produk)
+- Cookie consent banner
+- Mobile bottom navigation
 
 ### Keamanan
 - CSRF protection di semua form
 - XSS protection via Blade escaping
 - Mass assignment protection yang ketat
+- **Policy-based authorization** (Cart, Order, OrderItem, Product, Review, Voucher)
 - Ownership check di setiap resource sensitif
 - File upload: tipe & ukuran dibatasi
-- Rate limiting untuk auth & katalog produk
+- Rate limiting untuk auth, katalog, contact form & search API
+- **Soft deletes** pada model utama (user, product, order, dll)
+- Open redirect & filter bypass protection
 
 ## Instalasi
 
@@ -117,16 +142,49 @@ php artisan serve
 php artisan test
 ```
 
-Saat ini tersedia **88 test** dengan **195 assertions** yang mencakup autentikasi, katalog, keranjang, pesanan, produk seller, banner admin, profil, payment gateway, invoice PDF, export laporan, dashboard analytics, dan notifikasi email.
+Saat ini tersedia **117 test** dengan **255 assertions** yang mencakup autentikasi, katalog, keranjang, pesanan, produk seller, banner admin, profil, payment gateway, invoice PDF, export laporan, dashboard analytics, notifikasi email, voucher, wishlist, review, store follow, dan fitur fase 5.
 
 ## Screenshots
 
 ### Homepage
 
+| Homepage 1 | Homepage 2 |
+|---|---|
 | ![Homepage 1](docs/screenshots/homepage1.png) | ![Homepage 2](docs/screenshots/homepage2.png) |
+
+| Homepage 3 | Homepage 4 |
 |---|---|
 | ![Homepage 3](docs/screenshots/homepage3.png) | ![Homepage 4](docs/screenshots/homepage4.png) |
+
+| Homepage 5 | Homepage 6 |
+|---|---|
 | ![Homepage 5](docs/screenshots/homepage5.png) | ![Homepage 6](docs/screenshots/homepage6.png) |
+
+| Homepage (terbaru) |
+|---|
+| ![Homepage Terbaru](docs/screenshots/Homepage%20terbaru%20(1).png) |
+
+### Live Search
+
+| Live Search Dropdown |
+|---|
+| ![Live Search](docs/screenshots/Live%20Search%20Dropdown.png) |
+
+### Halaman Publik
+
+| About Us | Contact Us |
+|---|---|
+| ![About 1](docs/screenshots/About%20Page%201.png) | ![Contact](docs/screenshots/Contact%20Page.png) |
+
+| About Us (section 2) |
+|---|
+| ![About 2](docs/screenshots/About%20Page%202.png) |
+
+### Halaman Kategori
+
+| Daftar Kategori | Detail Kategori |
+|---|---|
+| ![Categories](docs/screenshots/Categories%20Index.png) | ![Category Detail](docs/screenshots/Category%20Detail%20-%20Elektronik.png) |
 
 ### Autentikasi
 
@@ -210,7 +268,7 @@ users ──< seller_profiles ──< products >── categories
 banners (standalone)
 ```
 
-### Database Tables (14)
+### Database Tables (24)
 
 | # | Table | Description |
 |---|-------|-------------|
@@ -225,9 +283,19 @@ banners (standalone)
 | 9 | `orders` | Order transactions |
 | 10 | `order_items` | Order line items |
 | 11 | `payments` | Midtrans payment records |
-| 12 | `reviews` | Product reviews & ratings |
+| 12 | `product_reviews` | Product reviews & ratings |
 | 13 | `banners` | Homepage banners |
 | 14 | `seller_verifications` | Seller verification requests |
+| 15 | `wishlists` | User wishlist items |
+| 16 | `notifications` | In-app notifications |
+| 17 | `settings` | App configuration (email, phone, address) |
+| 18 | `return_requests` | Return/refund requests |
+| 19 | `payouts` | Seller payout/withdrawal requests |
+| 20 | `activity_logs` | Admin audit trail |
+| 21 | `vouchers` | Discount vouchers (seller & admin) |
+| 22 | `voucher_usages` | Voucher usage tracking |
+| 23 | `store_followers` | Store follow relationships |
+| 24 | `carts` | Shopping carts (shared) |
 
 ## Roadmap
 
@@ -237,6 +305,33 @@ banners (standalone)
 - Fase 4 — Payment Gateway (Midtrans) ✅
 - Fase 5 — Dashboard Analytics, Laporan & Notifikasi ✅
 - Fase 6 — Polish & Deploy ✅
+
+### Fitur Tambahan (di luar PRD)
+- ✅ Halaman Contact & About Us
+- ✅ Halaman FAQ/Bantuan
+- ✅ Halaman Kategori Terpisah (slug-based)
+- ✅ Live Search (Fetch API + Alpine.js)
+- ✅ Voucher diskon (seller & admin)
+- ✅ Sistem retur/refund
+- ✅ Payout/pencairan saldo seller
+- ✅ Wishlist
+- ✅ Follow/unfollow toko
+- ✅ Notifikasi in-app
+- ✅ Activity logs (audit trail)
+- ✅ Soft deletes
+- ✅ Policy-based authorization
+- ✅ Sitemap.xml & robots.txt
+- ✅ Cookie consent banner
+- ✅ Mobile bottom navigation
+- ✅ Security hardening (open redirect, filter bypass)
+
+### Belum Diimplementasi
+- ⬜ Integrasi API kurir (RajaOngkir/Komerce)
+- ⬜ Chat buyer-seller
+- ⬜ Variasi produk (ukuran, warna)
+- ⬜ Notifikasi real-time (WebSocket/Broadcast)
+- ⬜ Halaman lacak pesanan tanpa login
+- ⬜ Stock reservation saat checkout
 
 ## Struktur Dokumentasi
 

@@ -6,7 +6,9 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.1-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Platform e-commerce **multi-role** (Buyer, Seller, Admin) dengan homepage modern, fitur transaksi lengkap, dan keamanan yang kuat. Dibangun sebagai proyek portofolio menggunakan Laravel 12, Tailwind CSS, dan Alpine.js.
+TokoKu merupakan platform e-commerce **multi-role** (Buyer, Seller, Admin) yang menghubungkan pembeli dan penjual dalam satu ekosistem belanja online. Pembeli dapat berbelanja produk dari berbagai kategori, checkout dengan payment gateway Midtrans, dan melacak pesanan. Seller dapat membuka toko sendiri, mengelola produk, menerima pesanan, dan mencairkan saldo. Admin mengelola verifikasi seller, kategori, banner, voucher, dan seluruh aktivitas platform.
+
+Dibangun sebagai **proyek portofolio** menggunakan Laravel 12, Tailwind CSS, Alpine.js, dan MySQL. Alur proses bisnis aplikasi ini sama dengan layaknya toko online pada umumnya — customer memilih produk, menambahkan ke keranjang, checkout, memilih metode pembayaran Midtrans (VA, QRIS, kartu kredit), dan jika pembayaran sukses maka pesanan diproses oleh seller untuk dikirim. Customer akan menerima notifikasi email berupa invoice dan update status pesanan secara real-time.
 
 **Status:** MVP Lengkap — Fase 1–6 selesai + fitur tambahan. Siap untuk demo dan deployment.
 

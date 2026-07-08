@@ -257,47 +257,49 @@ Midtrans Snap (Payment) · DomPDF (Invoice/Reports) · SMTP (Email)
 ```
 users ──< seller_profiles ──< products >── categories
   │           │                  │
-  │           │                  ├──< product_images
+  │           │                  ├── (images: JSON column)
   │           │                  │
   │           └──< order_items >── orders
   │                                    │
   ├──< addresses                     ├──< payments
   │                                    │
-  ├──< carts ──< cart_items           └──< reviews
+  ├──< carts                          └──< reviews
   │
-  └──< seller_verifications
+  ├──< seller_verifications
+  ├──< wishlists
+  ├──< store_followers
+  └──< notifications
 
-banners (standalone)
+banners (standalone) · vouchers ──< voucher_usages
+settings (standalone) · return_requests · payouts · activity_logs
 ```
 
-### Database Tables (24)
+### Database Tables (22)
 
 | # | Table | Description |
 |---|-------|-------------|
 | 1 | `users` | All users (buyer, seller, admin) |
 | 2 | `seller_profiles` | Seller store profiles |
 | 3 | `categories` | Product categories |
-| 4 | `products` | Product listings |
-| 5 | `product_images` | Product photos |
-| 6 | `addresses` | Shipping addresses |
-| 7 | `carts` | Shopping carts |
-| 8 | `cart_items` | Items in carts |
-| 9 | `orders` | Order transactions |
-| 10 | `order_items` | Order line items |
-| 11 | `payments` | Midtrans payment records |
-| 12 | `product_reviews` | Product reviews & ratings |
-| 13 | `banners` | Homepage banners |
-| 14 | `seller_verifications` | Seller verification requests |
-| 15 | `wishlists` | User wishlist items |
-| 16 | `notifications` | In-app notifications |
-| 17 | `settings` | App configuration (email, phone, address) |
-| 18 | `return_requests` | Return/refund requests |
-| 19 | `payouts` | Seller payout/withdrawal requests |
-| 20 | `activity_logs` | Admin audit trail |
-| 21 | `vouchers` | Discount vouchers (seller & admin) |
-| 22 | `voucher_usages` | Voucher usage tracking |
-| 23 | `store_followers` | Store follow relationships |
-| 24 | `carts` | Shopping carts (shared) |
+| 4 | `products` | Product listings (images stored as JSON column) |
+| 5 | `addresses` | Shipping addresses |
+| 6 | `carts` | Shopping cart items (product_id FK) |
+| 7 | `orders` | Order transactions |
+| 8 | `order_items` | Order line items |
+| 9 | `payments` | Midtrans payment records |
+| 10 | `product_reviews` | Product reviews & ratings |
+| 11 | `banners` | Homepage banners |
+| 12 | `seller_verifications` | Seller verification requests |
+| 13 | `wishlists` | User wishlist items |
+| 14 | `notifications` | In-app notifications |
+| 15 | `settings` | App configuration (email, phone, address) |
+| 16 | `return_requests` | Return/refund requests |
+| 17 | `payouts` | Seller payout/withdrawal requests |
+| 18 | `activity_logs` | Admin audit trail |
+| 19 | `vouchers` | Discount vouchers (seller & admin) |
+| 20 | `voucher_usages` | Voucher usage tracking |
+| 21 | `store_followers` | Store follow relationships |
+| 22 | `jobs` | Queue jobs |
 
 ## Roadmap
 

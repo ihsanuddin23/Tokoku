@@ -34,11 +34,14 @@ class BannerSeeder extends Seeder
         ];
 
         foreach ($banners as $banner) {
-            DB::table('banners')->insert([
-                ...$banner,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            DB::table('banners')->updateOrInsert(
+                ['title' => $banner['title']],
+                [
+                    ...$banner,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
         }
     }
 }

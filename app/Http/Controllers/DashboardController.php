@@ -96,46 +96,47 @@ class DashboardController extends Controller
         $totalRevenue = OrderItem::where('status', 'completed')->sum('subtotal');
         $pendingVerifications = \App\Models\SellerVerification::where('status', 'pending')->count();
         $recentUsers = \App\Models\User::latest()->take(5)->get();
-        $recentOrders = Order::with('user', 'items')->latest()->take(5)->get();
+        $recentOrders = Order::with('user:id,name', 'items:id,order_id,product_name,subtotal')->latest()->take(5)->get();
 
-        // 30-day sales trend
-        $salesData = [];
-        $dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $revenue = OrderItem::where('status', 'completed')
-                ->whereDate('updated_at', $date)
-                ->sum('subtotal');
-            $salesData[] = [
-                'label' => $dayLabels[$date->dayOfWeek],
-                'revenue' => (int) $revenue,
-            ];
-        }
-        $maxRevenue = max(array_column($salesData, 'revenue')) ?: 1;
+        // 30-day chart data — single query instead of 60
+        $startDate = now()->subDays(29)->startOfDay();
+        $dailyRevenue = Order::selectRaw('DATE(created_at) as date, SUM(grand_total) as revenue, COUNT(*) as order_count')
+            ->whereIn('status', ['paid', 'shipped', 'completed'])
+            ->where('created_at', '>=', $startDate)
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('revenue', 'date');
 
-        // 30-day chart data for Chart.js
+        $dailyOrders = Order::selectRaw('DATE(created_at) as date, COUNT(*) as cnt')
+            ->where('created_at', '>=', $startDate)
+            ->groupByRaw('DATE(created_at)')
+            ->pluck('cnt', 'date');
+
         $chartLabels = [];
         $chartRevenue = [];
         $chartOrders = [];
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i);
+            $dateKey = $date->format('Y-m-d');
             $chartLabels[] = $date->format('d M');
-            $chartRevenue[] = (int) Order::whereIn('status', ['paid', 'shipped', 'completed'])
-                ->whereDate('created_at', $date)
-                ->sum('grand_total');
-            $chartOrders[] = Order::whereDate('created_at', $date)->count();
+            $chartRevenue[] = (int) ($dailyRevenue[$dateKey] ?? 0);
+            $chartOrders[] = (int) ($dailyOrders[$dateKey] ?? 0);
         }
 
-        // Order status distribution
+        // Order status distribution — single query
         $orderStatusData = Order::select('status', \DB::raw('count(*) as count'))
-            ->where('status', '!=', 'cancelled')
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
 
-        // Top categories by sales
-        $topCategories = \App\Models\Category::select('categories.*')
-            ->selectRaw('(SELECT COUNT(*) FROM products INNER JOIN order_items ON products.id = order_items.product_id WHERE products.category_id = categories.id AND order_items.status = ?) as sold_count', ['completed'])
+        // Top categories — JOIN instead of correlated subquery
+        $topCategories = \App\Models\Category::select('categories.id', 'categories.name')
+            ->selectRaw('COALESCE(SUM(order_items.quantity), 0) as sold_count')
+            ->leftJoin('products', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('order_items', function ($join) {
+                $join->on('order_items.product_id', '=', 'products.id')
+                    ->where('order_items.status', '=', 'completed');
+            })
+            ->groupBy('categories.id', 'categories.name')
             ->orderByDesc('sold_count')
             ->take(5)
             ->get()
@@ -144,7 +145,7 @@ class DashboardController extends Controller
         return view('admin.dashboard', compact(
             'totalUsers', 'totalSellers', 'totalProducts', 'totalOrders',
             'totalRevenue', 'pendingVerifications', 'recentUsers',
-            'recentOrders', 'salesData', 'maxRevenue',
+            'recentOrders',
             'chartLabels', 'chartRevenue', 'chartOrders',
             'orderStatusData', 'topCategories'
         ));

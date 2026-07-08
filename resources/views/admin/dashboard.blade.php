@@ -116,14 +116,22 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-lg font-semibold font-display text-dark-900">Tren Penjualan 30 Hari</h2>
-                    <p class="text-xs text-dark-500 mt-0.5">Revenue & jumlah order</p>
+                    <p class="text-xs text-dark-500 mt-0.5">Revenue (kiri) & jumlah order (kanan)</p>
                 </div>
                 <div class="flex items-center gap-3 text-[10px]">
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-primary-500"></span> Revenue</span>
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-secondary-400"></span> Order</span>
                 </div>
             </div>
-            <canvas id="salesChart" height="200"></canvas>
+            <div style="position: relative; height: 240px;">
+                <canvas id="salesChart"></canvas>
+                <div id="salesChartLoading" class="absolute inset-0 flex items-center justify-center">
+                    <div class="flex items-center gap-2 text-dark-400 text-sm">
+                        <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        Memuat grafik...
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Actions -->
@@ -279,81 +287,140 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
-        // Sales trend chart
-        const salesCtx = document.getElementById('salesChart').getContext('2d');
-        new Chart(salesCtx, {
-            type: 'line',
-            data: {
-                labels: @json($chartLabels),
-                datasets: [
-                    {
-                        label: 'Revenue',
-                        data: @json($chartRevenue),
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                        yAxisID: 'y',
-                    },
-                    {
-                        label: 'Order',
-                        data: @json($chartOrders),
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        fill: false,
-                        tension: 0.3,
-                        yAxisID: 'y1',
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(ctx) {
-                                if (ctx.dataset.label === 'Revenue') {
-                                    return 'Revenue: Rp ' + ctx.parsed.y.toLocaleString('id-ID');
-                                }
-                                return 'Order: ' + ctx.parsed.y;
-                            },
-                        },
-                    },
-                },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
-                    y: { position: 'left', grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, callback: v => 'Rp ' + (v >= 1000000 ? (v/1000000).toFixed(1) + 'M' : v >= 1000 ? (v/1000).toFixed(0) + 'k' : v) } },
-                    y1: { position: 'right', grid: { display: false }, ticks: { font: { size: 10 } } },
-                },
-            },
-        });
+        // Load Chart.js dynamically
+        (function() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+            script.onload = initCharts;
+            document.head.appendChild(script);
+        })();
 
-        // Order status doughnut chart
-        @if (!empty($orderStatusData))
-            const statusCtx = document.getElementById('statusChart').getContext('2d');
-            const statusColors = @json($statusColors);
-            new Chart(statusCtx, {
-                type: 'doughnut',
+        function initCharts() {
+            // Sales trend chart
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            const gradient = salesCtx.createLinearGradient(0, 0, 0, 240);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
+            gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+            new Chart(salesCtx, {
+                type: 'line',
                 data: {
-                    labels: @json(collect($orderStatusData)->keys()->map(fn($s) => $statusLabels[$s] ?? $s)->values()),
-                    datasets: [{
-                        data: @json(array_values($orderStatusData)),
-                        backgroundColor: @json(collect($orderStatusData)->keys()->map(fn($s) => $statusColors[$s] ?? '#999')->values()),
-                        borderWidth: 0,
-                    }],
+                    labels: @json($chartLabels),
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: @json($chartRevenue),
+                            borderColor: '#6366f1',
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: '#6366f1',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Order',
+                            data: @json($chartOrders),
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.05)',
+                            fill: false,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: '#f59e0b',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2,
+                            yAxisID: 'y1',
+                        },
+                    ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    cutout: '65%',
+                    interaction: { mode: 'index', intersect: false },
+                    animation: { duration: 600 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.dataset.label === 'Revenue') {
+                                        return '  Revenue: Rp ' + ctx.parsed.y.toLocaleString('id-ID');
+                                    }
+                                    return '  Order: ' + ctx.parsed.y + ' transaksi';
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, color: '#94a3b8' }
+                        },
+                        y: {
+                            position: 'left',
+                            grid: { color: '#f1f5f9' },
+                            border: { display: false },
+                            ticks: {
+                                font: { size: 10 },
+                                color: '#94a3b8',
+                                callback: v => v >= 1000000 ? (v/1000000).toFixed(1) + 'M' : v >= 1000 ? (v/1000).toFixed(0) + 'k' : v
+                            },
+                        },
+                        y1: {
+                            position: 'right',
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: { font: { size: 10 }, color: '#94a3b8', stepSize: 1 },
+                            beginAtZero: true,
+                        },
+                    },
                 },
             });
-        @endif
+
+            document.getElementById('salesChartLoading').style.display = 'none';
+
+            // Order status doughnut chart
+            @if (!empty($orderStatusData))
+                const statusCtx = document.getElementById('statusChart').getContext('2d');
+                const statusColors = @json($statusColors);
+                new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @json(collect($orderStatusData)->keys()->map(fn($s) => $statusLabels[$s] ?? $s)->values()),
+                        datasets: [{
+                            data: @json(array_values($orderStatusData)),
+                            backgroundColor: @json(collect($orderStatusData)->keys()->map(fn($s) => $statusColors[$s] ?? '#999')->values()),
+                            borderWidth: 2,
+                            borderColor: '#fff',
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                padding: 10,
+                                cornerRadius: 8,
+                            },
+                        },
+                        cutout: '65%',
+                    },
+                });
+            @endif
+        }
     </script>
 </x-dashboard-layout>

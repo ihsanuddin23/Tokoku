@@ -60,6 +60,10 @@ Route::middleware('throttle:global')->group(function () {
     Route::get('/products/search', [ProductController::class, 'search'])->name('products.search')->middleware('throttle:30,1');
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
     Route::get('/stores/{slug}', [StoreController::class, 'show'])->name('stores.show');
+
+    // Track Order (public, no login required)
+    Route::get('/track-order', [OrderController::class, 'trackForm'])->name('orders.track');
+    Route::post('/track-order', [OrderController::class, 'trackOrder'])->name('orders.track.search')->middleware('throttle:10,1');
 });
 
 Route::post('/payment/webhook', [PaymentController::class, 'webhook'])->name('payment.webhook');

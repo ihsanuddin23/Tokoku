@@ -441,4 +441,24 @@ class OrderController extends Controller
 
         return $pdf->download('invoice-' . $order->order_number . '.pdf');
     }
+
+    public function trackForm(): View
+    {
+        return view('orders.track');
+    }
+
+    public function trackOrder(Request $request): View
+    {
+        $validated = $request->validate([
+            'order_number' => ['required', 'string', 'max:50'],
+            'email'         => ['required', 'email'],
+        ]);
+
+        $order = Order::where('order_number', $validated['order_number'])
+            ->whereHas('user', fn ($q) => $q->where('email', $validated['email']))
+            ->with('items.product.sellerProfile', 'items.product.category')
+            ->first();
+
+        return view('orders.track', compact('order'));
+    }
 }

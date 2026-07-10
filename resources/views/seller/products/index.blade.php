@@ -143,6 +143,12 @@
                                         <div class="min-w-0">
                                             <p class="text-sm font-medium text-dark-900 truncate max-w-[200px]">{{ $product->name }}</p>
                                             <p class="text-xs text-dark-400">{{ $product->condition_label }}</p>
+                                            @if ($product->variants->isNotEmpty())
+                                                <span class="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                                                    {{ $product->variants->count() }} variasi
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
@@ -153,7 +159,16 @@
                                     <span class="text-sm font-semibold text-dark-900">{{ $product->formatted_price }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <input type="number" name="stocks[{{ $product->id }}]" value="{{ $product->stock }}" min="0" class="w-20 text-center bg-dark-50 border border-dark-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-primary-400">
+                                    @if ($product->variants->isNotEmpty())
+                                        @foreach ($product->variants as $variant)
+                                            <div class="flex items-center justify-center gap-1.5 mb-1 last:mb-0">
+                                                <span class="text-[10px] text-dark-500 truncate max-w-[80px]" title="{{ $variant->name }}">{{ $variant->name }}</span>
+                                                <input type="number" name="variant_stocks[{{ $variant->id }}]" value="{{ $variant->stock }}" min="0" class="w-16 text-center bg-dark-50 border border-dark-200 rounded-lg px-1.5 py-1 text-xs outline-none focus:border-primary-400">
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <input type="number" name="stocks[{{ $product->id }}]" value="{{ $product->stock }}" min="0" class="w-20 text-center bg-dark-50 border border-dark-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-primary-400">
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @if ($product->status === 'active')

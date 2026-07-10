@@ -88,6 +88,7 @@
                         <select name="sort" class="bg-dark-50 border border-dark-200 rounded-lg px-3 py-1.5 text-xs text-dark-700 outline-none focus:border-primary-400 cursor-pointer" onchange="const base='{{ route('products.index', request()->only(['search', 'category', 'min_price', 'max_price', 'condition', 'min_rating'])) }}'; const sep=base.includes('?')?'&':'?'; window.location.href=base+sep+'sort='+this.value">
                             <option value="newest" @selected(request('sort', 'newest') === 'newest')>Terbaru</option>
                             <option value="popular" @selected(request('sort') === 'popular')>Terpopuler</option>
+                            <option value="rating" @selected(request('sort') === 'rating')>Rating Tertinggi</option>
                             <option value="price_asc" @selected(request('sort') === 'price_asc')>Harga Terendah</option>
                             <option value="price_desc" @selected(request('sort') === 'price_desc')>Harga Tertinggi</option>
                         </select>

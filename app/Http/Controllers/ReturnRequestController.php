@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreReturnRequest;
 use App\Models\Order;
 use App\Models\ReturnRequest;
 use Illuminate\Http\RedirectResponse;
@@ -43,7 +44,7 @@ class ReturnRequestController extends Controller
         return view('returns.create', compact('order'));
     }
 
-    public function store(Request $request, Order $order): RedirectResponse
+    public function store(StoreReturnRequest $request, Order $order): RedirectResponse
     {
         $this->authorize('view', $order);
 
@@ -52,11 +53,7 @@ class ReturnRequestController extends Controller
                 ->with('info', 'Pengembalian hanya dapat diajukan untuk pesanan yang sudah dikirim atau selesai.');
         }
 
-        $validated = $request->validate([
-            'reason'        => ['required', 'string', 'max:255'],
-            'description'   => ['nullable', 'string', 'max:1000'],
-            'order_item_id' => ['nullable', 'exists:order_items,id'],
-        ]);
+        $validated = $request->validated();
 
         if (! empty($validated['order_item_id'])) {
             $belongsToOrder = $order->items()->where('id', $validated['order_item_id'])->exists();

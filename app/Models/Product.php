@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Product extends Model
@@ -44,6 +45,16 @@ class Product extends Model
                 $product->slug = Str::slug($product->name) . '-' . Str::random(6);
             }
         });
+
+        static::saved(function () {
+            Cache::forget('home:popular');
+            Cache::forget('home:new');
+        });
+
+        static::deleted(function () {
+            Cache::forget('home:popular');
+            Cache::forget('home:new');
+        });
     }
 
     public function sellerProfile(): BelongsTo
@@ -74,6 +85,16 @@ class Product extends Model
     public function wishlists(): HasMany
     {
         return $this->hasMany(Wishlist::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function activeVariants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->where('is_active', true);
     }
 
     public function scopeActive(Builder $query): Builder

@@ -87,7 +87,7 @@
             <tbody>
                 @foreach ($order->items as $item)
                     <tr>
-                        <td>{{ $item->product_name }}</td>
+                        <td>{{ $item->product_name }}@if ($item->variant_name)<br><small style="color:#999;">Variasi: {{ $item->variant_name }}</small>@endif</td>
                         <td class="text-center">{{ $item->quantity }}</td>
                         <td class="text-right">Rp {{ number_format($item->product_price, 0, ',', '.') }}</td>
                         <td class="text-right">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>

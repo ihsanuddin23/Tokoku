@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class Banner extends Model
 {
@@ -19,4 +20,15 @@ class Banner extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            Cache::forget('home:banners');
+        });
+
+        static::deleted(function () {
+            Cache::forget('home:banners');
+        });
+    }
 }

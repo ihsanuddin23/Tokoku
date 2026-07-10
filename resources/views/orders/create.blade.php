@@ -78,7 +78,10 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-sm font-medium text-dark-900 truncate">{{ $item->product?->name ?? 'Produk tidak tersedia' }}</p>
-                                        <p class="text-xs text-dark-400">{{ $item->product?->formatted_price ?? '-' }} x {{ $item->quantity }}</p>
+                                        @if ($item->variant)
+                                            <p class="text-xs text-dark-500">Variasi: {{ $item->variant->name }}</p>
+                                        @endif
+                                        <p class="text-xs text-dark-400">{{ $item->variant ? $item->variant->formatted_effective_price : ($item->product?->formatted_price ?? '-') }} x {{ $item->quantity }}</p>
                                     </div>
                                     <p class="text-sm font-semibold text-dark-900 shrink-0">{{ $item->formatted_subtotal }}</p>
                                 </div>
@@ -91,14 +94,9 @@
                         <h2 class="text-sm font-semibold font-display text-dark-900 mb-4">Pilih Jasa Pengiriman</h2>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             @php
-                            $couriers = [
-                                ['id' => 'jne',     'name' => 'JNE',      'service' => 'REG', 'cost' => 15000, 'eta' => '2-3 hari'],
-                                ['id' => 'jnt',     'name' => 'J&T',      'service' => 'EZ',  'cost' => 14000, 'eta' => '2-3 hari'],
-                                ['id' => 'sicepat', 'name' => 'SiCepat',  'service' => 'REG', 'cost' => 13000, 'eta' => '2-3 hari'],
-                                ['id' => 'pos',     'name' => 'Pos Indonesia', 'service' => 'Biasa', 'cost' => 12000, 'eta' => '3-5 hari'],
-                                ['id' => 'tiki',    'name' => 'TIKI',     'service' => 'REG', 'cost' => 13500, 'eta' => '2-4 hari'],
-                                ['id' => 'anteraja','name' => 'AnterAja', 'service' => 'Same Day', 'cost' => 20000, 'eta' => '1 hari'],
-                            ];
+                            $shippingService = app(\App\Services\ShippingService::class);
+                            $couriers = $shippingService->getCouriers();
+                            $courierCosts = $shippingService->getCosts();
                             @endphp
                             @foreach ($couriers as $c)
                                 <label class="block cursor-pointer" @click="courier = '{{ $c['id'] }}'">
@@ -106,7 +104,7 @@
                                     <div :class="courier === '{{ $c['id'] }}' ? 'border-primary-500 ring-2 ring-primary-100 bg-primary-50' : 'border-dark-200 hover:border-primary-300'" class="border rounded-2xl p-3 transition-all">
                                         <p class="text-sm font-bold text-dark-900">{{ $c['name'] }}</p>
                                         <p class="text-[10px] text-dark-500 mt-0.5">{{ $c['service'] }} · {{ $c['eta'] }}</p>
-                                        <p class="text-xs font-semibold text-primary-600 mt-1">Rp {{ number_format($c['cost'], 0, ',', '.') }}</p>
+                                        <p class="text-xs font-semibold text-primary-600 mt-1">Rp {{ number_format($courierCosts[$c['id']] ?? 0, 0, ',', '.') }}</p>
                                     </div>
                                 </label>
                             @endforeach

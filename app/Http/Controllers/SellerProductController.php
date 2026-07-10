@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Services\ImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +21,7 @@ class SellerProductController extends Controller
         abort_unless($sellerProfile, 403, 'Anda bukan seller.');
 
         $products = $sellerProfile->products()
-            ->with('category')
+            ->with('category', 'variants')
             ->when($request->search, fn ($q) => $q->where('name', 'like', "%{$request->search}%"))
             ->when($request->category, fn ($q) => $q->where('category_id', $request->category))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
@@ -35,33 +38,24 @@ class SellerProductController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::cachedActive();
 
         return view('seller.products.index', compact('products', 'categories'));
     }
 
     public function create(): View
     {
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::cachedActive();
 
         return view('seller.products.create', compact('categories'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreProductRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:200'],
-            'category_id' => ['required', 'exists:categories,id'],
-            'description' => ['nullable', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'sku' => ['nullable', 'string', 'max:100'],
-            'weight' => ['nullable', 'integer', 'min:0'],
-            'condition' => ['required', 'in:new,used'],
-            'status' => ['required', 'in:active,inactive,draft'],
-            'images' => ['nullable', 'array', 'max:5'],
-            'images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-        ]);
+        $sellerProfile = $request->user()->sellerProfile;
+        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
+
+        $validated = $request->validated();
 
         $imageService = app(ImageService::class);
         $images = [];
@@ -72,13 +66,21 @@ class SellerProductController extends Controller
         }
         $validated['images'] = $images;
 
-        $sellerProfile = $request->user()->sellerProfile;
-        abort_unless($sellerProfile, 403, 'Anda bukan seller.');
-
         $product = $sellerProfile->products()->create($validated);
 
+        if (! empty($validated['variants'])) {
+            foreach ($validated['variants'] as $variantData) {
+                $product->variants()->create([
+                    'name' => $variantData['name'],
+                    'price_adjustment' => $variantData['price_adjustment'] ?? 0,
+                    'stock' => $variantData['stock'],
+                    'sku' => $variantData['sku'] ?? null,
+                    'is_active' => true,
+                ]);
+            }
+        }
+
         // Notify followers about new product
-        $sellerProfile = $request->user()->sellerProfile;
         $followers = $sellerProfile->followers()->with('user')->get();
         foreach ($followers as $follower) {
             $follower->user->notify(new \App\Notifications\NewProductFromFollowedStore($product, $sellerProfile));
@@ -94,32 +96,19 @@ class SellerProductController extends Controller
         abort_unless($sellerProfile, 403, 'Anda bukan seller.');
         $this->authorize('update', $product);
 
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::cachedActive();
+        $product->load('variants');
 
         return view('seller.products.edit', compact('product', 'categories'));
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
         $sellerProfile = $request->user()->sellerProfile;
         abort_unless($sellerProfile, 403, 'Anda bukan seller.');
         $this->authorize('update', $product);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:200'],
-            'category_id' => ['required', 'exists:categories,id'],
-            'description' => ['nullable', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'sku' => ['nullable', 'string', 'max:100'],
-            'weight' => ['nullable', 'integer', 'min:0'],
-            'condition' => ['required', 'in:new,used'],
-            'status' => ['required', 'in:active,inactive,draft'],
-            'images' => ['nullable', 'array', 'max:5'],
-            'images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-            'remove_images' => ['nullable', 'array'],
-            'remove_images.*' => ['string'],
-        ]);
+        $validated = $request->validated();
 
         $currentImages = $product->images ?? [];
 
@@ -147,7 +136,47 @@ class SellerProductController extends Controller
         $validated['images'] = $currentImages;
         unset($validated['remove_images']);
 
+        $variantsData = $validated['variants'] ?? [];
+        $removedVariantIds = $validated['removed_variant_ids'] ?? [];
+        unset($validated['variants'], $validated['removed_variant_ids']);
+
+        $oldStock = $product->stock;
         $product->update($validated);
+
+        if ($product->stock != $oldStock) {
+            event(new \App\Events\StockUpdated($product, $oldStock, (int) $product->stock));
+        }
+
+        foreach ($variantsData as $variantData) {
+            if (! empty($variantData['id'])) {
+                $variant = $product->variants()->find($variantData['id']);
+                if ($variant) {
+                    $oldVariantStock = $variant->stock;
+                    $variant->update([
+                        'name' => $variantData['name'],
+                        'price_adjustment' => $variantData['price_adjustment'] ?? 0,
+                        'stock' => $variantData['stock'],
+                        'sku' => $variantData['sku'] ?? null,
+                        'is_active' => $variantData['is_active'] ?? true,
+                    ]);
+                    if ($variant->stock != $oldVariantStock) {
+                        event(new \App\Events\StockUpdated($product, (int) $oldVariantStock, (int) $variant->stock, $variant));
+                    }
+                }
+            } else {
+                $product->variants()->create([
+                    'name' => $variantData['name'],
+                    'price_adjustment' => $variantData['price_adjustment'] ?? 0,
+                    'stock' => $variantData['stock'],
+                    'sku' => $variantData['sku'] ?? null,
+                    'is_active' => $variantData['is_active'] ?? true,
+                ]);
+            }
+        }
+
+        if (! empty($removedVariantIds)) {
+            $product->variants()->whereIn('id', $removedVariantIds)->delete();
+        }
 
         return redirect()->route('seller.products.index')
             ->with('status', 'product-updated');
@@ -178,24 +207,44 @@ class SellerProductController extends Controller
     public function bulkUpdateStock(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'stocks' => ['required', 'array'],
+            'stocks' => ['nullable', 'array'],
             'stocks.*' => ['required', 'integer', 'min:0'],
+            'variant_stocks' => ['nullable', 'array'],
+            'variant_stocks.*' => ['required', 'integer', 'min:0'],
         ]);
 
         $sellerProfile = $request->user()->sellerProfile;
         abort_unless($sellerProfile, 403, 'Anda bukan seller.');
         $updated = 0;
 
-        $products = Product::whereIn('id', array_keys($validated['stocks']))
-            ->where('seller_profile_id', $sellerProfile->id)
-            ->get()->keyBy('id');
+        if (! empty($validated['stocks'])) {
+            $products = Product::whereIn('id', array_keys($validated['stocks']))
+                ->where('seller_profile_id', $sellerProfile->id)
+                ->get()->keyBy('id');
 
-        foreach ($validated['stocks'] as $productId => $stock) {
-            $product = $products->get($productId);
+            foreach ($validated['stocks'] as $productId => $stock) {
+                $product = $products->get($productId);
 
-            if ($product) {
-                $product->update(['stock' => $stock]);
-                $updated++;
+                if ($product) {
+                    $product->update(['stock' => $stock]);
+                    $updated++;
+                }
+            }
+        }
+
+        if (! empty($validated['variant_stocks'])) {
+            $variantIds = array_keys($validated['variant_stocks']);
+            $variants = ProductVariant::whereIn('id', $variantIds)
+                ->whereHas('product', fn ($q) => $q->where('seller_profile_id', $sellerProfile->id))
+                ->get()->keyBy('id');
+
+            foreach ($validated['variant_stocks'] as $variantId => $stock) {
+                $variant = $variants->get($variantId);
+
+                if ($variant) {
+                    $variant->update(['stock' => $stock]);
+                    $updated++;
+                }
             }
         }
 

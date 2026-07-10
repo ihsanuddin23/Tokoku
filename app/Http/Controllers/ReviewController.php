@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreReviewRequest;
 use App\Models\Order;
 use App\Models\ProductReview;
 use Illuminate\Http\RedirectResponse;
@@ -9,7 +10,7 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request, Order $order): RedirectResponse
+    public function store(StoreReviewRequest $request, Order $order): RedirectResponse
     {
         $this->authorize('view', $order);
 
@@ -17,12 +18,7 @@ class ReviewController extends Controller
             return back()->with('info', 'Ulasan hanya bisa diberikan setelah pesanan selesai.');
         }
 
-        $validated = $request->validate([
-            'reviews' => ['required', 'array'],
-            'reviews.*.product_id' => ['required', 'exists:products,id'],
-            'reviews.*.rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'reviews.*.comment' => ['nullable', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         foreach ($validated['reviews'] as $reviewData) {
             $alreadyReviewed = ProductReview::where('user_id', $request->user()->id)

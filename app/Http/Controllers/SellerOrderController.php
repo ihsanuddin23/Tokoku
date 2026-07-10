@@ -48,7 +48,7 @@ class SellerOrderController extends Controller
         }
 
         $order->load(['items' => function ($q) use ($sellerProfile) {
-            $q->where('seller_profile_id', $sellerProfile->id)->with('product');
+            $q->where('seller_profile_id', $sellerProfile->id)->with(['product', 'variant']);
         }, 'user', 'address', 'payment']);
 
         $validTransitions = self::VALID_TRANSITIONS;
@@ -70,7 +70,7 @@ class SellerOrderController extends Controller
         $oldStatus = $orderItem->status;
         $oldOrderStatus = $orderItem->order->status;
 
-        $orderItem->load('product');
+        $orderItem->load(['product', 'variant']);
 
         if (! in_array($validated['status'], self::VALID_TRANSITIONS[$oldStatus] ?? [])) {
             return back()->with('info', "Tidak dapat mengubah status dari \"{$oldStatus}\" ke \"{$validated['status']}\".");
@@ -82,13 +82,21 @@ class SellerOrderController extends Controller
             ])->save();
 
             if ($validated['status'] === 'cancelled' && $oldStatus !== 'cancelled') {
-                if ($orderItem->product) {
+                if ($orderItem->variant) {
+                    $orderItem->variant->increment('stock', $orderItem->quantity);
+                } elseif ($orderItem->product) {
                     $orderItem->product->increment('stock', $orderItem->quantity);
+                }
+                if ($orderItem->product) {
                     $orderItem->product->decrement('total_sold', $orderItem->quantity);
                 }
             } elseif ($oldStatus === 'cancelled' && $validated['status'] !== 'cancelled') {
-                if ($orderItem->product) {
+                if ($orderItem->variant) {
+                    $orderItem->variant->decrement('stock', $orderItem->quantity);
+                } elseif ($orderItem->product) {
                     $orderItem->product->decrement('stock', $orderItem->quantity);
+                }
+                if ($orderItem->product) {
                     $orderItem->product->increment('total_sold', $orderItem->quantity);
                 }
             }

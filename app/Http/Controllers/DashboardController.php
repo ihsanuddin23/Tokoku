@@ -114,13 +114,17 @@ class DashboardController extends Controller
         $chartLabels = [];
         $chartRevenue = [];
         $chartOrders = [];
+        $salesData = [];
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $dateKey = $date->format('Y-m-d');
+            $revenue = (int) ($dailyRevenue[$dateKey] ?? 0);
             $chartLabels[] = $date->format('d M');
-            $chartRevenue[] = (int) ($dailyRevenue[$dateKey] ?? 0);
+            $chartRevenue[] = $revenue;
             $chartOrders[] = (int) ($dailyOrders[$dateKey] ?? 0);
+            $salesData[] = ['label' => $date->format('d M'), 'revenue' => $revenue];
         }
+        $maxRevenue = max($chartRevenue) ?: 1;
 
         // Order status distribution — single query
         $orderStatusData = Order::select('status', \DB::raw('count(*) as count'))
@@ -147,6 +151,7 @@ class DashboardController extends Controller
             'totalRevenue', 'pendingVerifications', 'recentUsers',
             'recentOrders',
             'chartLabels', 'chartRevenue', 'chartOrders',
+            'salesData', 'maxRevenue',
             'orderStatusData', 'topCategories'
         ));
     }

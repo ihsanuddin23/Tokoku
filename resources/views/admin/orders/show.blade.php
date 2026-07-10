@@ -106,6 +106,9 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold text-dark-900">{{ $item->product_name }}</p>
+                                @if ($item->variant_name)
+                                    <p class="text-xs text-dark-500 mt-0.5">Variasi: {{ $item->variant_name }}</p>
+                                @endif
                                 <p class="text-xs text-dark-400 mt-0.5">Toko: {{ $item->sellerProfile?->store_name ?? '-' }}</p>
                                 <p class="text-xs text-dark-500 mt-0.5">{{ $item->formatted_price }} Ã— {{ $item->quantity }}</p>
                             </div>

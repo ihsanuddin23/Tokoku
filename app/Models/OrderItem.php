@@ -10,8 +10,10 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
+        'product_variant_id',
         'seller_profile_id',
         'product_name',
+        'variant_name',
         'product_price',
         'quantity',
         'subtotal',
@@ -32,6 +34,11 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
     public function sellerProfile(): BelongsTo

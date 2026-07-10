@@ -55,13 +55,13 @@ class AdminSellerVerificationController extends Controller
                     'is_active' => true,
                 ])->save();
             } else {
-                $user->sellerProfile()->create([
+                $profile = $user->sellerProfile()->create([
                     'store_name' => $verification->store_name,
                     'store_slug' => $storeSlug,
                     'description' => $verification->description,
                     'city' => $verification->city,
                 ]);
-                $user->sellerProfile->forceFill([
+                $profile->forceFill([
                     'is_verified' => true,
                     'is_active' => true,
                 ])->save();

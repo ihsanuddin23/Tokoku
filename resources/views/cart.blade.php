@@ -81,17 +81,20 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <a href="{{ route('products.show', $item->product) }}" class="text-sm font-medium text-dark-900 hover:text-primary-600 transition-colors line-clamp-2">{{ $item->product->name }}</a>
+                                @if ($item->variant)
+                                    <p class="text-xs text-dark-500 mt-0.5">Variasi: {{ $item->variant->name }}</p>
+                                @endif
                                 @if ($item->product->sellerProfile)
                                     <p class="text-xs text-dark-400 mt-0.5">{{ $item->product->sellerProfile->store_name }}</p>
                                 @endif
-                                <p class="text-sm font-semibold text-primary-600 mt-1">{{ $item->product->formatted_price }}</p>
+                                <p class="text-sm font-semibold text-primary-600 mt-1">{{ $item->variant ? $item->variant->formatted_effective_price : $item->product->formatted_price }}</p>
                             </div>
                             <div class="flex flex-col items-end gap-2 shrink-0">
                                 <form method="POST" action="{{ route('cart.update', $item) }}" class="flex items-center gap-2">
                                     @csrf
                                     @method('PATCH')
                                     <button type="button" onclick="this.nextElementSibling.stepDown(); this.form.submit()" class="w-8 h-8 rounded-lg bg-dark-50 hover:bg-dark-100 text-dark-600 font-bold text-sm transition-colors">-</button>
-                                    <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="{{ $item->product->stock }}" class="w-14 text-center text-sm border border-dark-200 rounded-lg py-1 outline-none focus:border-primary-400" onchange="this.form.submit()">
+                                    <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="{{ $item->variant ? $item->variant->stock : $item->product->stock }}" class="w-14 text-center text-sm border border-dark-200 rounded-lg py-1 outline-none focus:border-primary-400" onchange="this.form.submit()">
                                     <button type="button" onclick="this.previousElementSibling.stepUp(); this.form.submit()" class="w-8 h-8 rounded-lg bg-dark-50 hover:bg-dark-100 text-dark-600 font-bold text-sm transition-colors">+</button>
                                 </form>
                                 <form method="POST" action="{{ route('cart.destroy', $item) }}" onsubmit="return confirm('Hapus produk ini dari keranjang?')">

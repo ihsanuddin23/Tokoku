@@ -72,6 +72,13 @@
                 <p class="text-sm font-semibold text-dark-900">Toko Diikuti</p>
                 <p class="text-xs text-dark-400 mt-0.5">Toko favorit</p>
             </a>
+            <a href="{{ route('messages.index') }}" class="card card-hover p-5 group animate-fade-in-up" style="animation-delay: 0.25s;">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                </div>
+                <p class="text-sm font-semibold text-dark-900">Pesan</p>
+                <p class="text-xs text-dark-400 mt-0.5">Chat dengan seller</p>
+            </a>
         </div>
 
         <!-- Recent Orders + Sidebar -->

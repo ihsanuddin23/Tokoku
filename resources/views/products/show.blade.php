@@ -74,6 +74,18 @@
                                 <span class="text-dark-400 font-normal">({{ $product->review_count }} ulasan)</span>
                             </span>
                         @endif
+                        @auth
+                            <a href="{{ route('messages.index') }}" onclick="event.preventDefault(); document.getElementById('chat-seller-form').submit()" class="ml-auto text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                Chat Penjual
+                            </a>
+                            <form id="chat-seller-form" action="{{ route('messages.start') }}" method="POST" style="display:none;">
+                                @csrf
+                                <input type="hidden" name="seller_profile_id" value="{{ $product->seller_profile_id }}">
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <input type="hidden" name="body" value="Halo, saya tertarik dengan produk {{ $product->name }}">
+                            </form>
+                        @endauth
                     </div>
                 </div>
 
@@ -104,22 +116,72 @@
 
                 @auth
                     @if ($product->stock > 0)
-                        <form method="POST" action="{{ route('cart.store') }}" class="flex items-center gap-3">
-                            @csrf
-                            <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="this.nextElementSibling.stepDown()" class="w-10 h-10 rounded-xl bg-dark-50 hover:bg-dark-100 text-dark-600 font-bold transition-colors">-</button>
-                                <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock }}" class="w-16 text-center input-modern" id="qty">
-                                <button type="button" onclick="this.previousElementSibling.stepUp()" class="w-10 h-10 rounded-xl bg-dark-50 hover:bg-dark-100 text-dark-600 font-bold transition-colors">+</button>
-                            </div>
-                            <button type="submit" class="btn-primary flex-1">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                                Tambah ke Keranjang
-                            </button>
-                        </form>
+                        <div x-data="{
+                            selectedVariantId: null,
+                            variants: {{ $product->activeVariants->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'price' => $v->effective_price, 'formatted_price' => $v->formatted_effective_price, 'stock' => $v->stock, 'price_adjustment' => $v->formatted_price_adjustment])->values()->toJson() }},
+                            basePrice: {{ (float) $product->price }},
+                            get currentPrice() {
+                                if (this.selectedVariantId) {
+                                    const v = this.variants.find(v => v.id === this.selectedVariantId);
+                                    return v ? v.formatted_price : '{{ $product->formatted_price }}';
+                                }
+                                return '{{ $product->formatted_price }}';
+                            },
+                            get currentStock() {
+                                if (this.selectedVariantId) {
+                                    const v = this.variants.find(v => v.id === this.selectedVariantId);
+                                    return v ? v.stock : 0;
+                                }
+                                return {{ $product->stock }};
+                            },
+                            get hasVariants() { return this.variants.length > 0; }
+                        }">
+                            @if ($product->activeVariants->isNotEmpty())
+                                <div class="space-y-2">
+                                    <p class="text-sm font-medium text-dark-700">Pilih Variasi</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button type="button" @click="selectedVariantId = null"
+                                            :class="selectedVariantId === null ? 'border-primary-500 ring-2 ring-primary-100 bg-primary-50 text-primary-700' : 'border-dark-200 hover:border-primary-300'"
+                                            class="border rounded-xl px-4 py-2 text-sm font-medium transition-all">
+                                            Standar
+                                        </button>
+                                        @foreach ($product->activeVariants as $variant)
+                                            <button type="button" @click="selectedVariantId = {{ $variant->id }}"
+                                                :class="selectedVariantId === {{ $variant->id }} ? 'border-primary-500 ring-2 ring-primary-100 bg-primary-50 text-primary-700' : 'border-dark-200 hover:border-primary-300'"
+                                                class="border rounded-xl px-4 py-2 text-sm font-medium transition-all">
+                                                {{ $variant->name }}
+                                                <span class="text-xs text-dark-400 ml-1">{{ $variant->formatted_price_adjustment }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            <form method="POST" action="{{ route('cart.store') }}" class="flex items-center gap-3 mt-4">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <input type="hidden" name="product_variant_id" :value="selectedVariantId">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="this.nextElementSibling.stepDown()" class="w-10 h-10 rounded-xl bg-dark-50 hover:bg-dark-100 text-dark-600 font-bold transition-colors">-</button>
+                                    <input type="number" name="quantity" value="1" min="1" :max="currentStock" class="w-16 text-center input-modern" id="qty">
+                                    <button type="button" onclick="this.previousElementSibling.stepUp()" class="w-10 h-10 rounded-xl bg-dark-50 hover:bg-dark-100 text-dark-600 font-bold transition-colors">+</button>
+                                </div>
+                                <button type="submit" class="btn-primary flex-1">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                    Tambah ke Keranjang
+                                </button>
+                            </form>
+                        </div>
                     @else
-                        <div class="card p-4 text-center">
+                        <div class="card p-4 text-center space-y-3">
                             <p class="text-sm text-red-500 font-medium">Produk ini sedang habis stoknya.</p>
+                            <form method="POST" action="{{ route('products.notify-stock', $product) }}">
+                                @csrf
+                                <button type="submit" class="btn-primary w-full justify-center text-sm py-2.5">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                    Beri Tahu Saya Saat Stok Tersedia
+                                </button>
+                            </form>
                         </div>
                     @endif
                 @else

@@ -23,7 +23,7 @@ class CancelExpiredOrders extends Command
         $orders = Order::where('status', 'pending')
             ->where('payment_status', 'unpaid')
             ->where('created_at', '<', $cutoff)
-            ->with('items.product', 'user')
+            ->with('items.product', 'items.variant', 'user')
             ->get();
 
         if ($orders->isEmpty()) {
@@ -42,7 +42,11 @@ class CancelExpiredOrders extends Command
 
                 foreach ($order->items as $item) {
                     if ($item->product) {
-                        $item->product->increment('stock', $item->quantity);
+                        if ($item->variant) {
+                            $item->variant->increment('stock', $item->quantity);
+                        } else {
+                            $item->product->increment('stock', $item->quantity);
+                        }
                         $item->product->decrement('total_sold', $item->quantity);
                     }
                     $item->forceFill(['status' => 'cancelled'])->save();

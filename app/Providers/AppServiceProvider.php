@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production') || str_contains(config('app.url'), 'ngrok')) {
             URL::forceScheme('https');
         }
+
+        Event::listen(\App\Events\OrderPlaced::class, \App\Listeners\SendOrderPlacedNotifications::class);
+        Event::listen(\App\Events\PaymentReceived::class, \App\Listeners\SendPaymentReceivedNotifications::class);
+        Event::listen(\App\Events\StockUpdated::class, \App\Listeners\SendStockRestockedNotifications::class);
 
         RateLimiter::for('global', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());

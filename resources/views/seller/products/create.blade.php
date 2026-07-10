@@ -118,18 +118,73 @@
 
                 <div class="flex flex-col gap-1.5">
                     <label class="text-sm font-medium text-dark-700">Gambar Produk</label>
-                    <div class="border-2 border-dashed border-dark-200 rounded-2xl p-6 text-center hover:border-primary-400 transition-colors">
-                        <input type="file" name="images[]" id="images" accept="image/*" multiple class="hidden" onchange="document.getElementById('file-list').textContent = Array.from(this.files).map(f => f.name).join(', ')">
+                    <div class="border-2 border-dashed border-dark-200 rounded-2xl p-6 text-center hover:border-primary-400 transition-colors" x-data="{ previews: [], fileNames: [], handleFiles(files) { this.previews = []; this.fileNames = []; Array.from(files).forEach(f => { this.fileNames.push(f.name); const reader = new FileReader(); reader.onload = e => this.previews.push(e.target.result); reader.readAsDataURL(f); }); } }">
+                        <input type="file" name="images[]" id="images" accept="image/*" multiple class="hidden" @change="handleFiles($event.target.files)">
                         <label for="images" class="cursor-pointer">
                             <div class="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-3">
                                 <svg class="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             </div>
                             <p class="text-sm font-medium text-dark-700">Klik untuk upload gambar</p>
-                            <p class="text-xs text-dark-400 mt-1">JPG, PNG, WebP. Maks 2MB per file.</p>
-                            <p id="file-list" class="text-xs text-primary-600 mt-2 font-medium"></p>
+                            <p class="text-xs text-dark-400 mt-1">JPG, PNG, WebP. Maks 2MB per file. Maks 5 gambar.</p>
                         </label>
+                        <template x-if="previews.length > 0">
+                            <div class="flex flex-wrap gap-3 mt-4 justify-center">
+                                <template x-for="(preview, index) in previews" :key="index">
+                                    <div class="relative group">
+                                        <img :src="preview" class="w-20 h-20 rounded-xl object-cover border border-dark-200">
+                                        <button type="button" @click="previews.splice(index, 1); fileNames.splice(index, 1)" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">×</button>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                     <x-input-error :messages="$errors->get('images.*')" class="text-xs text-red-500 mt-1" />
+                </div>
+
+                <!-- Variants -->
+                <div class="flex flex-col gap-1.5" x-data="{ variants: [{}] }">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-dark-700">Variasi Produk</label>
+                        <button type="button" @click="variants.push({})" class="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            Tambah Variasi
+                        </button>
+                    </div>
+                    <p class="text-xs text-dark-400">Opsional. Tambah variasi seperti ukuran, warna, dll.</p>
+
+                    <template x-for="(variant, index) in variants" :key="index">
+                        <div class="border border-dark-100 rounded-2xl p-4 space-y-3 relative">
+                            <button type="button" @click="variants.splice(index, 1)"
+                                class="absolute top-3 right-3 text-dark-400 hover:text-red-500 transition-colors"
+                                x-show="variants.length > 1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-dark-500">Nama Variasi <span class="text-red-500">*</span></label>
+                                    <input type="text" :name="`variants[${index}][name]`" x-model="variant.name"
+                                        class="input-modern text-sm mt-1" placeholder="Contoh: Ukuran L">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-dark-500">Penyesuaian Harga (Rp)</label>
+                                    <input type="number" :name="`variants[${index}][price_adjustment]`" x-model="variant.price_adjustment"
+                                        class="input-modern text-sm mt-1" placeholder="0" min="0" step="any">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-dark-500">Stok <span class="text-red-500">*</span></label>
+                                    <input type="number" :name="`variants[${index}][stock]`" x-model="variant.stock"
+                                        class="input-modern text-sm mt-1" placeholder="0" min="0" required>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-dark-500">SKU</label>
+                                    <input type="text" :name="`variants[${index}][sku]`" x-model="variant.sku"
+                                        class="input-modern text-sm mt-1" placeholder="Opsional">
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 <div class="flex justify-end gap-3 pt-2">

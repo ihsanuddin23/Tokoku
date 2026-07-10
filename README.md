@@ -10,7 +10,7 @@ TokoKu merupakan platform e-commerce **multi-role** (Buyer, Seller, Admin) yang 
 
 Dibangun sebagai **proyek portofolio** menggunakan Laravel 12, Tailwind CSS, Alpine.js, dan MySQL. Alur proses bisnis aplikasi ini sama dengan layaknya toko online pada umumnya — customer memilih produk, menambahkan ke keranjang, checkout, memilih metode pembayaran Midtrans (VA, QRIS, kartu kredit), dan jika pembayaran sukses maka pesanan diproses oleh seller untuk dikirim. Customer akan menerima notifikasi email berupa invoice dan update status pesanan secara real-time.
 
-**Status:** MVP Lengkap — Fase 1–6 selesai + fitur tambahan. Siap untuk demo dan deployment.
+**Status:** MVP Lengkap — Fase 1–6 selesai + fitur tambahan + comprehensive test suite (331 tests). Siap untuk demo dan deployment.
 
 ## Demo
 
@@ -144,7 +144,7 @@ php artisan serve
 php artisan test
 ```
 
-Saat ini tersedia **117 test** dengan **255 assertions** yang mencakup autentikasi, katalog, keranjang, pesanan, produk seller, banner admin, profil, payment gateway, invoice PDF, export laporan, dashboard analytics, notifikasi email, voucher, wishlist, review, store follow, dan fitur fase 5.
+Saat ini tersedia **331 test** dengan **712 assertions** yang mencakup autentikasi, katalog, keranjang, pesanan, produk seller, banner admin, profil, payment gateway (Midtrans + webhook), invoice PDF, export laporan, dashboard analytics (buyer/seller/admin), notifikasi email & in-app, voucher, wishlist, review, store follow, alamat (CRUD), pendaftaran seller, retur/refund, notifikasi mark-read, admin management (user, verifikasi seller, kategori, order, return, product), seller management (product, voucher, order, store settings, reviews), shipping, stock notification, dan chat.
 
 ## Screenshots
 
@@ -328,11 +328,14 @@ settings (standalone) · return_requests · payouts · activity_logs
 - ✅ Cookie consent banner
 - ✅ Mobile bottom navigation
 - ✅ Security hardening (open redirect, filter bypass)
+- ✅ Chat buyer-seller (real-time messaging)
+- ✅ Variasi produk (ukuran, warna)
+- ✅ Stock notification (restock alert)
+- ✅ Shipping management (kurir & tracking)
+- ✅ Comprehensive test suite (331 tests, 712 assertions)
 
 ### Belum Diimplementasi
 - ⬜ Integrasi API kurir (RajaOngkir/Komerce)
-- ⬜ Chat buyer-seller
-- ⬜ Variasi produk (ukuran, warna)
 - ⬜ Notifikasi real-time (WebSocket/Broadcast)
 - ⬜ Halaman lacak pesanan tanpa login
 - ⬜ Stock reservation saat checkout

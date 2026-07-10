@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\View\View;
@@ -33,7 +34,7 @@ class AdminOrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load(['user', 'items.product.sellerProfile', 'address', 'payment']);
+        $order->load(['user', 'items.product.sellerProfile', 'items.variant', 'address', 'payment']);
 
         return view('admin.orders.show', compact('order'));
     }
@@ -73,12 +74,19 @@ class AdminOrderController extends Controller
 
         DB::transaction(function () use ($order, $newStatus, $oldStatus, $updates) {
             if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+                $order->load('items.variant');
                 $productIds = $order->items->pluck('product_id');
                 $products = \App\Models\Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
+                $variantIds = $order->items->pluck('product_variant_id')->filter()->values();
+                $variants = \App\Models\ProductVariant::whereIn('id', $variantIds)->lockForUpdate()->get()->keyBy('id');
                 foreach ($order->items as $item) {
                     $product = $products[$item->product_id] ?? null;
                     if ($product) {
-                        $product->increment('stock', $item->quantity);
+                        if ($item->product_variant_id && isset($variants[$item->product_variant_id])) {
+                            $variants[$item->product_variant_id]->increment('stock', $item->quantity);
+                        } else {
+                            $product->increment('stock', $item->quantity);
+                        }
                         $product->decrement('total_sold', $item->quantity);
                     }
                 }

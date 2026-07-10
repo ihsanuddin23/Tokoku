@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\LowStockAlert;
-use App\Mail\OrderPlacedBuyer;
+use App\Http\Requests\ApplyVoucherRequest;
+use App\Http\Requests\StoreOrderRequest;
 use App\Mail\OrderStatusUpdated;
 use App\Models\Address;
 use App\Models\Cart;
@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\Voucher;
 use App\Models\VoucherUsage;
 use App\Notifications\OrderStatusNotification;
+use App\Services\ShippingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +46,7 @@ class OrderController extends Controller
     {
         $cartItems = $request->user()
             ->cartItems()
-            ->with('product.sellerProfile')
+            ->with(['product.sellerProfile', 'variant'])
             ->get();
 
         if ($cartItems->isEmpty()) {
@@ -58,30 +59,20 @@ class OrderController extends Controller
         return view('orders.create', compact('cartItems', 'addresses', 'subtotal'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreOrderRequest $request): RedirectResponse
     {
-        $courierCosts = [
-            'jne' => 15000, 'jnt' => 14000, 'sicepat' => 13000,
-            'pos' => 12000, 'tiki' => 13500, 'anteraja' => 20000,
-        ];
-        $courierServices = [
-            'jne' => 'REG', 'jnt' => 'EZ', 'sicepat' => 'REG',
-            'pos' => 'Biasa', 'tiki' => 'REG', 'anteraja' => 'Same Day',
-        ];
+        $shippingService = app(ShippingService::class);
+        $courierCosts = $shippingService->getCosts();
+        $courierServices = $shippingService->getServices();
 
-        $validated = $request->validate([
-            'address_id'       => ['required', 'exists:addresses,id'],
-            'notes'            => ['nullable', 'string', 'max:500'],
-            'shipping_courier' => ['required', 'in:' . implode(',', array_keys($courierCosts))],
-            'payment_method'   => ['required', 'in:midtrans,cod'],
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
         $address = Address::where('id', $validated['address_id'])
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        $cartItems = $user->cartItems()->with('product')->get();
+        $cartItems = $user->cartItems()->with(['product', 'variant'])->get();
 
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart')->with('info', 'Keranjang Anda kosong.');
@@ -105,15 +96,30 @@ class OrderController extends Controller
             $productIds = $cartItems->pluck('product_id');
             $products = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
 
+            $variantIds = $cartItems->pluck('product_variant_id')->filter()->values();
+            $variants = \App\Models\ProductVariant::whereIn('id', $variantIds)->lockForUpdate()->get()->keyBy('id');
+
             $subtotal = 0;
             foreach ($cartItems as $item) {
                 $product = $products[$item->product_id];
-                if ($product->stock < $item->quantity) {
-                    throw ValidationException::withMessages([
-                        'stock' => "Stok {$product->name} tidak mencukupi (tersisa {$product->stock}).",
-                    ]);
+                $variant = $item->product_variant_id ? ($variants[$item->product_variant_id] ?? null) : null;
+
+                if ($variant) {
+                    if ($variant->stock < $item->quantity) {
+                        throw ValidationException::withMessages([
+                            'stock' => "Stok variassi {$variant->name} dari {$product->name} tidak mencukupi (tersisa {$variant->stock}).",
+                        ]);
+                    }
+                    $unitPrice = $variant->effective_price;
+                } else {
+                    if ($product->stock < $item->quantity) {
+                        throw ValidationException::withMessages([
+                            'stock' => "Stok {$product->name} tidak mencukupi (tersisa {$product->stock}).",
+                        ]);
+                    }
+                    $unitPrice = $product->price;
                 }
-                $subtotal += $product->price * $item->quantity;
+                $subtotal += $unitPrice * $item->quantity;
             }
 
             $grandTotal = $subtotal + $shippingCost;
@@ -134,7 +140,11 @@ class OrderController extends Controller
                     if ($voucherModel->isSellerVoucher()) {
                         $effectiveSubtotal = $cartItems->filter(
                             fn ($item) => $item->product && $item->product->seller_profile_id === $voucherModel->seller_profile_id
-                        )->sum(fn ($item) => $products[$item->product_id]->price * $item->quantity);
+                        )->sum(function ($item) use ($products, $variants) {
+                            $variant = $item->product_variant_id ? ($variants[$item->product_variant_id] ?? null) : null;
+                            $unitPrice = $variant ? $variant->effective_price : $products[$item->product_id]->price;
+                            return $unitPrice * $item->quantity;
+                        });
                     }
 
                     $discountAmount = $voucherModel->calculateDiscount((float) $effectiveSubtotal, (float) $shippingCost);
@@ -167,19 +177,29 @@ class OrderController extends Controller
 
             foreach ($cartItems as $item) {
                 $product = $products[$item->product_id];
+                $variant = $item->product_variant_id ? ($variants[$item->product_variant_id] ?? null) : null;
+
+                $unitPrice = $variant ? $variant->effective_price : $product->price;
+                $variantName = $variant ? $variant->name : null;
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item->product_id,
+                    'product_variant_id' => $item->product_variant_id,
                     'seller_profile_id' => $product->seller_profile_id,
                     'product_name' => $product->name,
-                    'product_price' => $product->price,
+                    'variant_name' => $variantName,
+                    'product_price' => $unitPrice,
                     'quantity' => $item->quantity,
-                    'subtotal' => $product->price * $item->quantity,
+                    'subtotal' => $unitPrice * $item->quantity,
                     'status' => 'pending',
                 ]);
 
-                $product->decrement('stock', $item->quantity);
+                if ($variant) {
+                    $variant->decrement('stock', $item->quantity);
+                } else {
+                    $product->decrement('stock', $item->quantity);
+                }
                 $product->increment('total_sold', $item->quantity);
             }
 
@@ -202,18 +222,7 @@ class OrderController extends Controller
 
         $order->load('items.product.sellerProfile.user', 'user');
 
-        if ($order->user) {
-            Mail::to($order->user->email)->queue(new OrderPlacedBuyer($order));
-        }
-
-        foreach ($order->items as $item) {
-            if ($item->product && $item->product->stock <= 5 && $item->product->stock > 0) {
-                $sellerProfile = $item->product->sellerProfile;
-                if ($sellerProfile && $sellerProfile->user) {
-                    Mail::to($sellerProfile->user->email)->queue(new LowStockAlert($item->product));
-                }
-            }
-        }
+        event(new \App\Events\OrderPlaced($order));
 
         if ($order->payment_method === 'cod') {
             return redirect()->route('orders.show', $order)
@@ -227,7 +236,7 @@ class OrderController extends Controller
     {
         $this->authorize('view', $order);
 
-        $order->load('items.product.sellerProfile', 'address');
+        $order->load('items.product.sellerProfile', 'items.variant', 'address');
 
         return view('orders.show', compact('order'));
     }
@@ -267,14 +276,21 @@ class OrderController extends Controller
         $oldStatus = $order->status;
 
         DB::transaction(function () use ($order) {
-            $order->load('items.product');
+            $order->load('items.product', 'items.variant');
             $productIds = $order->items->pluck('product_id');
             $products = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
+
+            $variantIds = $order->items->pluck('product_variant_id')->filter()->values();
+            $variants = \App\Models\ProductVariant::whereIn('id', $variantIds)->lockForUpdate()->get()->keyBy('id');
 
             foreach ($order->items as $item) {
                 if ($item->status !== 'cancelled' && $item->product) {
                     $product = $products[$item->product_id] ?? $item->product;
-                    $product->increment('stock', $item->quantity);
+                    if ($item->product_variant_id && isset($variants[$item->product_variant_id])) {
+                        $variants[$item->product_variant_id]->increment('stock', $item->quantity);
+                    } else {
+                        $product->increment('stock', $item->quantity);
+                    }
                     $product->decrement('total_sold', $item->quantity);
                 }
             }
@@ -302,22 +318,31 @@ class OrderController extends Controller
         $user = $request->user();
         $added = 0;
 
-        $order->load('items.product');
+        $order->load('items.product', 'items.variant');
 
         foreach ($order->items as $item) {
-            if (! $item->product || $item->product->status !== 'active' || $item->product->stock < 1) {
+            if (! $item->product || $item->product->status !== 'active') {
                 continue;
             }
 
-            $existing = $user->cartItems()->where('product_id', $item->product_id)->first();
+            $availableStock = $item->variant ? $item->variant->stock : $item->product->stock;
+            if ($availableStock < 1) {
+                continue;
+            }
+
+            $existing = $user->cartItems()
+                ->where('product_id', $item->product_id)
+                ->where('product_variant_id', $item->product_variant_id)
+                ->first();
 
             if ($existing) {
-                $newQty = min($existing->quantity + $item->quantity, $item->product->stock);
+                $newQty = min($existing->quantity + $item->quantity, $availableStock);
                 $existing->update(['quantity' => $newQty]);
             } else {
                 $user->cartItems()->create([
                     'product_id' => $item->product_id,
-                    'quantity' => min($item->quantity, $item->product->stock),
+                    'product_variant_id' => $item->product_variant_id,
+                    'quantity' => min($item->quantity, $availableStock),
                 ]);
             }
             $added++;
@@ -348,14 +373,12 @@ class OrderController extends Controller
         }
     }
 
-    public function applyVoucher(Request $request): JsonResponse
+    public function applyVoucher(ApplyVoucherRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:50'],
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
-        $cartItems = $user->cartItems()->with('product')->get();
+        $cartItems = $user->cartItems()->with(['product', 'variant'])->get();
 
         if ($cartItems->isEmpty()) {
             return response()->json(['message' => 'Keranjang kosong.'], 422);
@@ -403,10 +426,8 @@ class OrderController extends Controller
             return response()->json(['message' => 'Anda sudah menggunakan voucher ini sebanyak maksimum yang diperbolehkan.'], 422);
         }
 
-        $courierCosts = [
-            'jne' => 15000, 'jnt' => 14000, 'sicepat' => 13000,
-            'pos' => 12000, 'tiki' => 13500, 'anteraja' => 20000,
-        ];
+        $shippingService = app(ShippingService::class);
+        $courierCosts = $shippingService->getCosts();
         $shippingCost = $courierCosts[$request->input('shipping_courier', 'jne')] ?? 15000;
 
         $discount = $voucher->calculateDiscount((float) $effectiveSubtotal, (float) $shippingCost);

@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\NewOrderSeller;
-use App\Mail\OrderStatusUpdated;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
@@ -11,7 +9,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Midtrans\Config;
 use Midtrans\Snap;
@@ -136,18 +133,7 @@ class PaymentController extends Controller
             $order->items()->where('status', 'pending')->update(['status' => 'paid']);
         });
 
-        // Send email notifications
-        $order->load('items.sellerProfile.user', 'user');
-
-        if ($order->user) {
-            Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, 'pending', 'paid'));
-        }
-
-        foreach ($order->items as $item) {
-            if ($item->sellerProfile && $item->sellerProfile->user) {
-                Mail::to($item->sellerProfile->user->email)->queue(new NewOrderSeller($item));
-            }
-        }
+        event(new \App\Events\PaymentReceived($order));
     }
 
     public function success(Request $request, Order $order): View|RedirectResponse
@@ -226,16 +212,7 @@ class PaymentController extends Controller
                 }
 
                 if ($transactionStatus === 'settlement' || ($transactionStatus === 'capture' && $fraudStatus === 'accept')) {
-                    $order->load('items.sellerProfile.user', 'user');
-                    if ($order->user) {
-                        Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, 'pending', 'paid'));
-                    }
-
-                    foreach ($order->items as $item) {
-                        if ($item->sellerProfile && $item->sellerProfile->user) {
-                            Mail::to($item->sellerProfile->user->email)->queue(new NewOrderSeller($item));
-                        }
-                    }
+                    event(new \App\Events\PaymentReceived($order));
                 }
 
                 return response()->json(['status' => 'ok']);
@@ -267,10 +244,12 @@ class PaymentController extends Controller
                 ],
                 'item_details' => $order->items->map(function ($item) {
                     return [
-                        'id' => (string) $item->product_id,
+                        'id' => $item->product_variant_id
+                            ? (string) $item->product_id . '-' . $item->product_variant_id
+                            : (string) $item->product_id,
                         'price' => (int) $item->product_price,
                         'quantity' => $item->quantity,
-                        'name' => substr($item->product_name, 0, 50),
+                        'name' => substr($item->variant_name ? $item->product_name . ' (' . $item->variant_name . ')' : $item->product_name, 0, 50),
                     ];
                 })->toArray(),
                 'callbacks' => [

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Category extends Model
@@ -48,10 +49,26 @@ class Category extends Model
                 $category->slug = $slug;
             }
         });
+
+        static::saved(function () {
+            Cache::forget('categories:active');
+        });
+
+        static::deleted(function () {
+            Cache::forget('categories:active');
+        });
     }
 
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }
+
+    public static function cachedActive(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Cache::remember('categories:active', now()->addHours(6), function () {
+            return static::where('is_active', true)->orderBy('name')->get();
+        });
+    }
+
 }

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StockSubscription;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -12,7 +14,7 @@ class ProductController extends Controller
 {
     public function index(Request $request): View
     {
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::cachedActive();
 
         $products = Product::active()
             ->whereHas('sellerProfile', fn ($q) => $q->where('is_active', true))
@@ -29,6 +31,7 @@ class ProductController extends Controller
                     'price_desc' => $q->orderBy('price', 'desc'),
                     'newest' => $q->latest(),
                     'popular' => $q->orderBy('total_sold', 'desc'),
+                    'rating' => $q->orderBy('rating', 'desc')->orderBy('review_count', 'desc'),
                     default => $q->latest(),
                 };
             }, fn ($q) => $q->latest())
@@ -44,6 +47,9 @@ class ProductController extends Controller
             abort(404);
         }
 
+        // Eager load everything upfront
+        $product->load(['sellerProfile', 'category', 'activeVariants']);
+
         if (! $product->sellerProfile || ! $product->sellerProfile->is_active) {
             abort(404);
         }
@@ -54,35 +60,47 @@ class ProductController extends Controller
         array_unshift($viewed, $product->id);
         $viewed = array_slice($viewed, 0, 10);
 
-        $product->load(['sellerProfile', 'category']);
+        // Reviews — simple paginate (1 query instead of 2)
+        $reviews = $product->reviews()->with('user:id,name')->latest()->simplePaginate(5);
 
-        $reviews = $product->reviews()->with('user')->latest()->paginate(5);
+        // Single wishlist query for product + related + recently viewed
+        $isWishlisted = false;
+        $wishlistedIds = [];
 
-        $isWishlisted = auth()->check()
-            ? $product->wishlists()->where('user_id', auth()->id())->exists()
-            : false;
-
+        // Related products — select only needed columns, use join instead of whereHas
         $related = Product::active()
-            ->whereHas('sellerProfile', fn ($q) => $q->where('is_active', true))
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->orderByDesc('total_sold')
+            ->join('seller_profiles', 'products.seller_profile_id', '=', 'seller_profiles.id')
+            ->where('seller_profiles.is_active', true)
+            ->where('products.category_id', $product->category_id)
+            ->where('products.id', '!=', $product->id)
+            ->select('products.id', 'products.name', 'products.slug', 'products.price', 'products.images', 'products.condition', 'products.rating', 'products.review_count', 'products.total_sold', 'products.seller_profile_id')
+            ->with(['sellerProfile:id,store_name,store_slug'])
+            ->orderByDesc('products.total_sold')
             ->take(8)
             ->get();
 
-        $wishlistedIds = auth()->check()
-            ? \App\Models\Wishlist::where('user_id', auth()->id())
-                ->whereIn('product_id', $related->pluck('id'))
-                ->pluck('product_id')
-                ->toArray()
-            : [];
+        // Recently viewed — same join approach, select only needed columns
+        $recentlyViewed = collect();
+        $recentlyIds = array_slice($viewed, 1);
+        if (! empty($recentlyIds)) {
+            $recentlyViewed = Product::active()
+                ->join('seller_profiles', 'products.seller_profile_id', '=', 'seller_profiles.id')
+                ->where('seller_profiles.is_active', true)
+                ->whereIn('products.id', $recentlyIds)
+                ->select('products.id', 'products.name', 'products.slug', 'products.price', 'products.images', 'products.condition', 'products.seller_profile_id')
+                ->with(['sellerProfile:id,store_name,store_slug'])
+                ->take(5)
+                ->get();
+        }
 
-        // Recently viewed products (exclude current)
-        $recentlyViewed = Product::active()
-            ->whereHas('sellerProfile', fn ($q) => $q->where('is_active', true))
-            ->whereIn('id', array_slice($viewed, 1))
-            ->take(5)
-            ->get();
+        if ($request->user()) {
+            $allProductIds = array_merge([$product->id], $related->pluck('id')->toArray(), $recentlyViewed->pluck('id')->toArray());
+            $wishlistedIds = \App\Models\Wishlist::where('user_id', $request->user()->id)
+                ->whereIn('product_id', $allProductIds)
+                ->pluck('product_id')
+                ->toArray();
+            $isWishlisted = in_array($product->id, $wishlistedIds);
+        }
 
         return response()->view('products.show', compact('product', 'related', 'reviews', 'isWishlisted', 'wishlistedIds', 'recentlyViewed'))
             ->cookie(cookie('recently_viewed', json_encode($viewed), 60 * 24 * 30));
@@ -117,5 +135,39 @@ class ProductController extends Controller
                 'url'          => route('products.show', $p),
             ]),
         ]);
+    }
+
+    public function subscribeStock(Request $request, Product $product): RedirectResponse|JsonResponse
+    {
+        if ($product->status !== 'active') {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'product_variant_id' => ['nullable', 'exists:product_variants,id'],
+        ]);
+
+        $variantId = $validated['product_variant_id'] ?? null;
+
+        $existing = StockSubscription::where('user_id', $request->user()->id)
+            ->where('product_id', $product->id)
+            ->where('product_variant_id', $variantId)
+            ->first();
+
+        if ($existing) {
+            return $request->expectsJson()
+                ? response()->json(['message' => 'Anda sudah berlangganan notifikasi stok ini.'])
+                : back()->with('info', 'Anda sudah berlangganan notifikasi stok ini.');
+        }
+
+        StockSubscription::create([
+            'user_id' => $request->user()->id,
+            'product_id' => $product->id,
+            'product_variant_id' => $variantId,
+        ]);
+
+        return $request->expectsJson()
+            ? response()->json(['message' => 'Anda akan diberi tahu saat stok tersedia.'])
+            : back()->with('status', 'Anda akan diberi tahu saat stok tersedia.');
     }
 }

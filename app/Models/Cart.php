@@ -9,6 +9,7 @@ class Cart extends Model
 {
     protected $fillable = [
         'product_id',
+        'product_variant_id',
         'quantity',
     ];
 
@@ -22,13 +23,23 @@ class Cart extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function getSubtotalAttribute(): float
+    public function variant(): BelongsTo
     {
-        if (! $this->product) {
-            return 0;
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function getUnitPriceAttribute(): float
+    {
+        if ($this->variant) {
+            return $this->variant->effective_price;
         }
 
-        return (float) $this->product->price * $this->quantity;
+        return $this->product ? (float) $this->product->price : 0;
+    }
+
+    public function getSubtotalAttribute(): float
+    {
+        return $this->unit_price * $this->quantity;
     }
 
     public function getFormattedSubtotalAttribute(): string

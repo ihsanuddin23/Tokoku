@@ -20,6 +20,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
@@ -126,6 +127,9 @@ Route::middleware(['auth', 'active', 'throttle:authenticated'])->group(function 
         Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist');
         Route::post('/wishlist/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle')->middleware('throttle:30,1');
 
+        // Stock Notification
+        Route::post('/products/{product}/notify-stock', [ProductController::class, 'subscribeStock'])->name('products.notify-stock')->middleware('throttle:30,1');
+
         // Follow Store
         Route::post('/stores/{sellerProfile}/follow', [StoreController::class, 'follow'])->name('stores.follow')->middleware('throttle:30,1');
         Route::delete('/stores/{sellerProfile}/follow', [StoreController::class, 'unfollow'])->name('stores.unfollow');
@@ -143,6 +147,12 @@ Route::middleware(['auth', 'active', 'throttle:authenticated'])->group(function 
         Route::get('/returns', [ReturnRequestController::class, 'index'])->name('returns.index');
         Route::get('/orders/{order}/returns/create', [ReturnRequestController::class, 'create'])->name('returns.create');
         Route::post('/orders/{order}/returns', [ReturnRequestController::class, 'store'])->name('returns.store')->middleware('throttle:write-heavy');
+
+        // Messages / Chat
+        Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+        Route::post('/messages/start', [MessageController::class, 'start'])->name('messages.start')->middleware('throttle:30,1');
+        Route::get('/messages/{conversation}', [MessageController::class, 'show'])->name('messages.show');
+        Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store')->middleware('throttle:30,1');
 
         // Become Seller (buyer only)
         Route::middleware('role:buyer')->group(function () {

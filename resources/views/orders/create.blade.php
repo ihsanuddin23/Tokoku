@@ -19,6 +19,47 @@
             </div>
         @endif
 
+        @isset($reservationExpiresAt)
+        <div class="card border-amber-200 bg-amber-50/50 p-4 mb-6 flex items-center justify-between gap-4 animate-fade-in-down"
+             x-data="{
+                 expiresAt: new Date('{{ $reservationExpiresAt->toIso8601String() }}').getTime(),
+                 minutes: 0, seconds: 0, expired: false,
+                 init() {
+                     const update = () => {
+                         const diff = this.expiresAt - Date.now();
+                         if (diff <= 0) { this.expired = true; this.minutes = 0; this.seconds = 0; return; }
+                         this.minutes = Math.floor(diff / 60000);
+                         this.seconds = Math.floor((diff % 60000) / 1000);
+                     };
+                     update();
+                     setInterval(update, 1000);
+                 }
+             }">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-amber-900">Stok Direservasi</p>
+                    <p class="text-xs text-amber-700" x-show="!expired">
+                        Selesaikan checkout dalam
+                        <span class="font-bold" x-text="String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0')">15:00</span>
+                        — stok akan dilepas otomatis setelah waktu habis.
+                    </p>
+                    <p class="text-xs text-red-600 font-medium" x-show="expired" x-cloak style="display:none;">
+                        Waktu reservasi habis. Silakan ulangi checkout.
+                    </p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('orders.cancel-checkout') }}">
+                @csrf
+                <button type="submit" class="text-xs text-dark-500 hover:text-red-600 font-medium transition-colors whitespace-nowrap">
+                    Batalkan
+                </button>
+            </form>
+        </div>
+        @endisset
+
         <form method="POST" action="{{ route('orders.store') }}">
             @csrf
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

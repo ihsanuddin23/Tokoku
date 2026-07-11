@@ -13,7 +13,9 @@ use App\Models\Product;
 use App\Models\Voucher;
 use App\Models\VoucherUsage;
 use App\Notifications\OrderStatusNotification;
+use App\Exceptions\InsufficientStockException;
 use App\Services\ShippingService;
+use App\Services\StockReservationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -42,7 +44,7 @@ class OrderController extends Controller
         return view('orders.index', compact('orders'));
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
         $cartItems = $request->user()
             ->cartItems()
@@ -53,10 +55,26 @@ class OrderController extends Controller
             return view('orders.empty');
         }
 
+        $reservationService = app(StockReservationService::class);
+
+        try {
+            $result = $reservationService->reserveForCheckout($request->user()->id, $cartItems);
+            $reservationExpiresAt = $result['expires_at'];
+        } catch (InsufficientStockException $e) {
+            return redirect()->route('cart')->with('info', $e->getMessage());
+        }
+
         $addresses = $request->user()->addresses()->latest()->get();
         $subtotal = $cartItems->sum(fn ($item) => $item->subtotal);
 
-        return view('orders.create', compact('cartItems', 'addresses', 'subtotal'));
+        return view('orders.create', compact('cartItems', 'addresses', 'subtotal', 'reservationExpiresAt'));
+    }
+
+    public function cancelCheckout(Request $request): RedirectResponse
+    {
+        app(StockReservationService::class)->releaseForUser($request->user()->id);
+
+        return redirect()->route('cart')->with('info', 'Checkout dibatalkan. Stok produk telah dikembalikan.');
     }
 
     public function store(StoreOrderRequest $request): RedirectResponse
@@ -92,7 +110,12 @@ class OrderController extends Controller
 
         $shippingAddress = "{$address->recipient_name}, {$address->phone}\n{$address->full_address}\n{$address->district}, {$address->city}, {$address->province} {$address->postal_code}";
 
-        $order = DB::transaction(function () use ($user, $validated, $cartItems, $shippingCost, $shippingService, $shippingAddress, $address) {
+        $reservationService = app(StockReservationService::class);
+
+        // Check if user has active reservations (from checkout page)
+        $hasReservations = \App\Models\StockReservation::where('user_id', $user->id)->active()->exists();
+
+        $order = DB::transaction(function () use ($user, $validated, $cartItems, $shippingCost, $shippingService, $shippingAddress, $address, $reservationService, $hasReservations) {
             $productIds = $cartItems->pluck('product_id');
             $products = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
 
@@ -104,21 +127,24 @@ class OrderController extends Controller
                 $product = $products[$item->product_id];
                 $variant = $item->product_variant_id ? ($variants[$item->product_variant_id] ?? null) : null;
 
-                if ($variant) {
-                    if ($variant->stock < $item->quantity) {
-                        throw ValidationException::withMessages([
-                            'stock' => "Stok variassi {$variant->name} dari {$product->name} tidak mencukupi (tersisa {$variant->stock}).",
-                        ]);
+                // Only check stock if no reservation (stock already decremented during checkout)
+                if (! $hasReservations) {
+                    if ($variant) {
+                        if ($variant->stock < $item->quantity) {
+                            throw ValidationException::withMessages([
+                                'stock' => "Stok variasi {$variant->name} dari {$product->name} tidak mencukupi (tersisa {$variant->stock}).",
+                            ]);
+                        }
+                    } else {
+                        if ($product->stock < $item->quantity) {
+                            throw ValidationException::withMessages([
+                                'stock' => "Stok {$product->name} tidak mencukupi (tersisa {$product->stock}).",
+                            ]);
+                        }
                     }
-                    $unitPrice = $variant->effective_price;
-                } else {
-                    if ($product->stock < $item->quantity) {
-                        throw ValidationException::withMessages([
-                            'stock' => "Stok {$product->name} tidak mencukupi (tersisa {$product->stock}).",
-                        ]);
-                    }
-                    $unitPrice = $product->price;
                 }
+
+                $unitPrice = $variant ? $variant->effective_price : $product->price;
                 $subtotal += $unitPrice * $item->quantity;
             }
 
@@ -195,12 +221,20 @@ class OrderController extends Controller
                     'status' => 'pending',
                 ]);
 
-                if ($variant) {
-                    $variant->decrement('stock', $item->quantity);
-                } else {
-                    $product->decrement('stock', $item->quantity);
+                // Decrement stock only if no reservation (already decremented during checkout)
+                if (! $hasReservations) {
+                    if ($variant) {
+                        $variant->decrement('stock', $item->quantity);
+                    } else {
+                        $product->decrement('stock', $item->quantity);
+                    }
                 }
                 $product->increment('total_sold', $item->quantity);
+            }
+
+            // Consume reservations if they exist (stock already decremented)
+            if ($hasReservations) {
+                $reservationService->consumeForUser($user->id);
             }
 
             Cart::where('user_id', $user->id)->delete();

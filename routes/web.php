@@ -111,6 +111,7 @@ Route::middleware(['auth', 'active', 'throttle:authenticated'])->group(function 
         // Orders
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
+        Route::post('/orders/cancel-checkout', [OrderController::class, 'cancelCheckout'])->name('orders.cancel-checkout');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store')->middleware('throttle:write-heavy');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel')->middleware('throttle:write-heavy');
